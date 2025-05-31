@@ -1,0 +1,18 @@
+{
+  "short_name": "Finance io",
+  "name": "Finance io - Gestão Financeira Inteligente",
+  "icons": [
+    {
+      "src": "logo.svg",
+      "sizes": "32x32",
+      "type": "image/svg+xml"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#2563EB",
+  "background_color": "#ffffff",
+  "orientation": "portrait",
+  "categories": ["finance", "productivity"],
+  "description": "Controle suas finanças de forma inteligente"
+} 
