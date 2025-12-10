@@ -55,18 +55,20 @@ const AIReport: React.FC<AIReportProps> = ({ timeframe = 'month' }) => {
       }
 
       // Calcular métricas importantes
+      // Usa diretamente o campo amount da coluna transactions.amount
       const incomeTransactions = filteredTransactions.filter(t => t.type === 'income');
       const expenseTransactions = filteredTransactions.filter(t => t.type === 'expense');
       
-      const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
-      const totalExpenses = expenseTransactions.reduce((sum, t) => sum + t.amount, 0);
+      const totalIncome = incomeTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+      const totalExpenses = expenseTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
       const balance = totalIncome - totalExpenses;
 
       // Categorizar Saídas
+      // Usa diretamente o campo amount da coluna transactions.amount
       const expensesByCategory = expenseTransactions.reduce((acc, t) => {
-        acc[t.category] = (acc[t.category] || 0) + t.amount;
-        return acc;
-      }, {} as Record<string, number>);
+        acc[t.category] = (acc[t.category] || 0) + (t.amount || 0);
+          return acc;
+        }, {} as Record<string, number>);
 
       // Encontrar maiores gastos
       const topExpenses = expenseTransactions

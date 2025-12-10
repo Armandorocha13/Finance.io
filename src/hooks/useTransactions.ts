@@ -166,7 +166,8 @@ export function useTransactions() {
             return {
               id: item.id,
               description: item.description || '',
-              amount: item.amount,
+              // Preserva o valor numérico direto da coluna amount da tabela transactions
+              amount: typeof item.amount === 'number' ? item.amount : Number(item.amount) || 0,
               type: item.type as 'income' | 'expense',
               category: item.category,
               date: dateStr,
@@ -257,7 +258,8 @@ export function useTransactions() {
                 const formattedTransaction: Transaction = {
                   id: newTransaction.id,
                   description: newTransaction.description || '',
-                  amount: newTransaction.amount,
+                  // Preserva o valor numérico direto da coluna amount da tabela transactions
+                  amount: typeof newTransaction.amount === 'number' ? newTransaction.amount : Number(newTransaction.amount) || 0,
                   type: newTransaction.type as 'income' | 'expense',
                   category: newTransaction.category,
                   date: dateStr,
@@ -300,7 +302,8 @@ export function useTransactions() {
                 const formattedTransaction: Transaction = {
                   id: updatedTransaction.id,
                   description: updatedTransaction.description || '',
-                  amount: updatedTransaction.amount,
+                  // Preserva o valor numérico direto da coluna amount da tabela transactions
+                  amount: typeof updatedTransaction.amount === 'number' ? updatedTransaction.amount : Number(updatedTransaction.amount) || 0,
                   type: updatedTransaction.type as 'income' | 'expense',
                   category: updatedTransaction.category,
                   date: dateStr,
@@ -419,7 +422,8 @@ export function useTransactions() {
         const formattedTransaction: Transaction = {
           id: data.id,
           description: data.description || '',
-          amount: data.amount,
+          // Preserva o valor numérico direto da coluna amount da tabela transactions
+          amount: typeof data.amount === 'number' ? data.amount : Number(data.amount) || 0,
           type: data.type as 'income' | 'expense',
           category: data.category,
           date: dateStr,

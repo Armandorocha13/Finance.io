@@ -58,13 +58,10 @@ const Dashboard = () => {
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
 
-  // Função auxiliar para garantir que amount seja sempre um número
-  const getAmount = (amount: any): number => {
-    if (typeof amount === 'number') {
-      return isNaN(amount) ? 0 : amount;
-    }
-    const parsed = parseFloat(String(amount));
-    return isNaN(parsed) ? 0 : parsed;
+  // Usa diretamente o campo amount da tabela transactions (já é number)
+  // Garante que valores inválidos sejam tratados como 0
+  const getAmount = (amount: number): number => {
+    return typeof amount === 'number' && !isNaN(amount) ? amount : 0;
   };
 
   // Remove duplicatas de forma mais robusta usando Map
@@ -92,13 +89,15 @@ const Dashboard = () => {
     );
     
     // Debug: Log detalhado para verificar transações de entrada
+    // Usa diretamente o campo amount da coluna transactions.amount
     const incomeTransactions = filtered.filter(t => t.type === 'income');
     const expenseTransactions = filtered.filter(t => t.type === 'expense');
     
-    const totalIncome = incomeTransactions.reduce((sum, t) => sum + getAmount(t.amount), 0);
-    const totalExpenses = expenseTransactions.reduce((sum, t) => sum + getAmount(t.amount), 0);
+    // Soma diretamente os valores da coluna amount (já são números)
+    const totalIncome = incomeTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const totalExpenses = expenseTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
     
-    console.log('🔍 Debug Dashboard - Cálculo Detalhado:', {
+    console.log('🔍 Debug Dashboard - Cálculo Detalhado (usando amount direto da tabela):', {
       totalTransactions: transactions.length,
       uniqueTransactions: uniqueTransactions.length,
       filteredTransactions: filtered.length,
@@ -109,7 +108,7 @@ const Dashboard = () => {
       incomeDetails: incomeTransactions.map(t => ({
         id: t.id,
         description: t.description,
-        amount: getAmount(t.amount),
+        amount: t.amount, // Valor direto da coluna amount
         date: t.date,
         type: t.type
       })),
@@ -124,17 +123,17 @@ const Dashboard = () => {
     return filtered;
   }, [transactions, filterType, selectedYear, selectedMonth]);
 
-  // Calcula totais de forma consistente
+  // Calcula totais usando diretamente o campo amount da coluna transactions.amount
   const totalIncome = useMemo(() => {
     return filteredTransactions
       .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + getAmount(t.amount), 0);
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
   }, [filteredTransactions]);
 
   const totalExpenses = useMemo(() => {
     return filteredTransactions
       .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + getAmount(t.amount), 0);
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
   }, [filteredTransactions]);
 
   const netBalance = useMemo(() => {
@@ -241,9 +240,9 @@ const Dashboard = () => {
                     <PieChart>
                       <Pie
                         data={(() => {
-                          // Calcula totais de entradas e saídas usando a mesma lógica dos cards
+                          // Calcula totais usando diretamente o campo amount da coluna transactions.amount
                           const totals = filteredTransactions.reduce((acc, transaction) => {
-                            const amount = getAmount(transaction.amount);
+                            const amount = transaction.amount || 0; // Valor direto da coluna amount
                             if (transaction.type === 'income') {
                               acc.entradas += amount;
                             } else {
@@ -283,8 +282,9 @@ const Dashboard = () => {
                         animationEasing="ease-out"
                       >
                         {(() => {
+                          // Usa diretamente o campo amount da coluna transactions.amount
                           const data = filteredTransactions.reduce((acc, transaction) => {
-                            const amount = getAmount(transaction.amount);
+                            const amount = transaction.amount || 0; // Valor direto da coluna amount
                             if (transaction.type === 'income') {
                               acc.entradas += amount;
                             } else {

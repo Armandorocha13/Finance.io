@@ -42,13 +42,14 @@ export function calculateFinancialMetrics(transactions: Transaction[]): Financia
   });
 
   // Calcular Entradas e Saídas mensais
+  // Usa diretamente o campo amount da coluna transactions.amount
   const monthlyIncome = monthlyTransactions
     .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
 
   const monthlyExpenses = monthlyTransactions
     .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
 
   // Calcular taxa de economia
   const savingsRate = monthlyIncome > 0 
@@ -56,14 +57,15 @@ export function calculateFinancialMetrics(transactions: Transaction[]): Financia
     : 0;
 
   // Categorizar Saídas
+  // Usa diretamente o campo amount da coluna transactions.amount
   const expenses = monthlyTransactions.filter(t => t.type === 'expense');
   const essentialExpenses = expenses
     .filter(t => ESSENTIAL_CATEGORIES.includes(t.category.toLowerCase()))
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
   
   const nonEssentialExpenses = expenses
     .filter(t => !ESSENTIAL_CATEGORIES.includes(t.category.toLowerCase()))
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
 
   // Calcular fundo de emergência (considerando 6 meses de Saídas essenciais)
   const emergencyFundTarget = essentialExpenses * 6;
@@ -76,9 +78,10 @@ export function calculateFinancialMetrics(transactions: Transaction[]): Financia
     : 0;
 
   // Calcular proporção dívida/renda
+  // Usa diretamente o campo amount da coluna transactions.amount
   const monthlyDebt = expenses
     .filter(t => t.category.toLowerCase().includes('dívida') || t.category.toLowerCase().includes('financiamento'))
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
 
   const debtToIncomeRatio = monthlyIncome > 0 
     ? (monthlyDebt / monthlyIncome) * 100 
