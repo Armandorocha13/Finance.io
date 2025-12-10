@@ -1,4 +1,4 @@
-# Finance AI 💰
+# Finance.io 💰
 
 Aplicação web moderna para gerenciamento financeiro pessoal, desenvolvida com React, TypeScript e Supabase.
 
