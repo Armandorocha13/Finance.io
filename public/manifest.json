@@ -1,6 +1,6 @@
 {
-  "short_name": "Finance io",
-  "name": "Finance io - Gestão Financeira Inteligente",
+  "short_name": "Vaidoso FC",
+  "name": "Vaidoso FC - Gestão Financeira e Artilharia",
   "icons": [
     {
       "src": "logo.svg",
@@ -14,5 +14,5 @@
   "background_color": "#ffffff",
   "orientation": "portrait",
   "categories": ["finance", "productivity"],
-  "description": "Controle suas finanças de forma inteligente"
+  "description": "Gestão financeira e artilharia do clube"
 } 

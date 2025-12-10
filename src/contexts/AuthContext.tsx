@@ -1,7 +1,26 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+/**
+ * AuthContext.tsx
+ * 
+ * Contexto de autenticação da aplicação Vaidoso FC
+ * 
+ * NOTA: Autenticação está desativada temporariamente.
+ * Este contexto fornece um usuário mock para permitir
+ * o funcionamento da aplicação sem necessidade de login.
+ * 
+ * Quando a autenticação for reativada, este arquivo deve
+ * ser atualizado para usar o Supabase corretamente.
+ * 
+ * @author Vaidoso FC
+ * @version 1.0.0
+ */
+
+import React, { createContext, useContext, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+/**
+ * Interface do usuário da aplicação
+ */
 interface User {
   id: string;
   email: string;
@@ -10,18 +29,32 @@ interface User {
   };
 }
 
+/**
+ * Tipo do contexto de autenticação
+ * Define todas as propriedades e métodos disponíveis
+ */
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
+  user: User | null; // Usuário atual (mock quando autenticação desativada)
+  session: Session | null; // Sessão do Supabase (null quando desativada)
+  loading: boolean; // Estado de carregamento
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  isLoading: boolean;
+  isLoading: boolean; // Estado de carregamento adicional
 }
 
+// Criação do contexto
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Hook para acessar o contexto de autenticação
+ * 
+ * @returns {AuthContextType} Contexto de autenticação
+ * @throws {Error} Se usado fora do AuthProvider
+ * 
+ * @example
+ * const { user, signOut } = useAuth();
+ */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -30,75 +63,66 @@ export const useAuth = () => {
   return context;
 };
 
+/**
+ * Provider de autenticação
+ * 
+ * ATENÇÃO: Autenticação está DESATIVADA.
+ * Retorna sempre um usuário mock para permitir o funcionamento
+ * da aplicação sem necessidade de login real.
+ * 
+ * @param {React.ReactNode} children - Componentes filhos
+ * @returns {JSX.Element} Provider de autenticação
+ */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
+  // Usuário mock - usado quando autenticação está desativada
+  const mockUser: User = {
+    id: '1',
+    email: 'usuario@demo.com',
+    user_metadata: {
+      name: 'Usuário Demo',
+    },
+  };
 
-  useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
+  // Estados do contexto (valores fixos quando autenticação está desativada)
+  const [user] = useState<User | null>(mockUser);
+  const [session] = useState<Session | null>(null);
+  const [loading] = useState(false);
+  const [isLoading] = useState(false);
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Check if user is stored in localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
-
-    return () => subscription.unsubscribe();
-  }, []);
-
+  /**
+   * Função de cadastro (desativada)
+   * 
+   * @param {string} email - Email do usuário
+   * @param {string} password - Senha do usuário
+   * @param {string} fullName - Nome completo (opcional)
+   * @returns {Promise<{ error: null }>} Sempre retorna sem erro
+   */
   const signUp = async (email: string, password: string, fullName?: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        }
-      }
-    });
-    return { error };
+    // TODO: Implementar quando autenticação for reativada
+    return { error: null };
   };
 
+  /**
+   * Função de login (desativada)
+   * 
+   * @param {string} email - Email do usuário
+   * @param {string} password - Senha do usuário
+   * @returns {Promise<void>} Promise vazia
+   */
   const signIn = async (email: string, password: string) => {
-    try {
-      // For demo purposes, create a mock user
-      const mockUser: User = {
-        id: '1',
-        email,
-        user_metadata: {
-          name: email.split('@')[0],
-        },
-      };
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-    } catch (error) {
-      throw new Error('Erro ao fazer login');
-    }
+    // TODO: Implementar quando autenticação for reativada
   };
 
+  /**
+   * Função de logout (desativada)
+   * 
+   * @returns {Promise<void>} Promise vazia
+   */
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    localStorage.removeItem('user');
+    // TODO: Implementar quando autenticação for reativada
   };
 
+  // Valor do contexto
   const value = {
     user,
     session,

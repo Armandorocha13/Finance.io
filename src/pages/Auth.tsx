@@ -44,7 +44,7 @@ const Auth = () => {
         } else {
           toast({
             title: "Login realizado!",
-            description: "Bem-vindo de volta ao Finance io!",
+            description: "Bem-vindo de volta ao Vaidoso FC!",
           });
           navigate('/');
         }
@@ -103,8 +103,8 @@ const Auth = () => {
               <DollarSign className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Finance io</h1>
-          <p className="text-slate-300">Controle suas finanças de forma inteligente</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Vaidoso FC</h1>
+          <p className="text-slate-300">Gestão financeira e artilharia do clube</p>
         </div>
 
         <Card className="bg-white/10 backdrop-blur-lg border-white/20">

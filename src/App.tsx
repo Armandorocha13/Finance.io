@@ -1,3 +1,17 @@
+/**
+ * App.tsx
+ * 
+ * Componente raiz da aplicação Vaidoso FC
+ * 
+ * Responsabilidades:
+ * - Configurar providers globais (QueryClient, Theme, Auth)
+ * - Definir rotas da aplicação
+ * - Configurar integrações externas (PayPal)
+ * 
+ * @author Vaidoso FC
+ * @version 1.0.0
+ */
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,27 +24,54 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 
-const queryClient = new QueryClient();
+// Configuração do React Query para gerenciamento de estado do servidor
+// Permite cache, refetch automático e sincronização de dados
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
+// Configuração do PayPal para pagamentos (se necessário no futuro)
 const paypalOptions = {
-  "client-id": "AQwaPBQ4JXVwZpQKzD3xvXtXHxVYGBHqHGF-68qh1Z_kvYUoaiNUzHK9NNNQbVoDPsG2TDuZEZZEDhsE",
+  clientId: "AQwaPBQ4JXVwZpQKzD3xvXtXHxVYGBHqHGF-68qh1Z_kvYUoaiNUzHK9NNNQbVoDPsG2TDuZEZZEDhsE",
   currency: "BRL",
   intent: "capture",
 };
 
+/**
+ * Componente principal da aplicação
+ * 
+ * Estrutura de Providers (ordem importa):
+ * 1. QueryClientProvider - Gerencia queries e cache
+ * 2. ThemeProvider - Gerencia tema claro/escuro
+ * 3. TooltipProvider - Habilita tooltips globais
+ * 4. PayPalScriptProvider - Integração PayPal
+ * 5. AuthProvider - Contexto de autenticação
+ * 6. BrowserRouter - Roteamento da aplicação
+ */
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="dark" storageKey="finance-ai-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="vaidoso-fc-theme">
       <TooltipProvider>
+        {/* Toasters para notificações */}
         <Toaster />
         <Sonner />
+        
         <PayPalScriptProvider options={paypalOptions}>
           <AuthProvider>
             <BrowserRouter>
               <Routes>
+                {/* Rota principal - Dashboard */}
                 <Route path="/" element={<Index />} />
+                
+                {/* Rota de autenticação (desativada, mas mantida para compatibilidade) */}
                 <Route path="/auth" element={<Auth />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                
+                {/* Rota catch-all para páginas não encontradas */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

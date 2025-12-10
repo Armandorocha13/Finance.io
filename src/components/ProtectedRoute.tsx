@@ -1,39 +1,40 @@
+/**
+ * ProtectedRoute.tsx
+ * 
+ * Componente de rota protegida
+ * 
+ * NOTA: Autenticação está desativada.
+ * Este componente sempre renderiza os children sem verificação.
+ * 
+ * Quando autenticação for reativada, este componente deve:
+ * - Verificar se usuário está autenticado
+ * - Redirecionar para /auth se não estiver
+ * - Exibir loading durante verificação
+ * 
+ * @author Vaidoso FC
+ * @version 1.0.0
+ */
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent } from '@/components/ui/card';
-import { DollarSign } from 'lucide-react';
 
+/**
+ * Props do componente ProtectedRoute
+ */
 interface ProtectedRouteProps {
-  children: React.ReactNode;
+  children: React.ReactNode; // Componentes filhos a serem renderizados
 }
 
+/**
+ * Componente de rota protegida
+ * 
+ * Atualmente sempre renderiza os children pois autenticação está desativada.
+ * 
+ * @param {ProtectedRouteProps} props - Props do componente
+ * @returns {JSX.Element} Children renderizados
+ */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <Card className="bg-white/10 backdrop-blur-lg border-white/20">
-          <CardContent className="p-8 text-center">
-            <div className="flex items-center justify-center mb-4">
-              <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-3 rounded-xl animate-pulse">
-                <DollarSign className="w-8 h-8 text-white" />
-              </div>
-            </div>
-            <h2 className="text-xl text-white mb-2">Finance io</h2>
-            <p className="text-slate-300">Carregando...</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
+  // TODO: Implementar verificação de autenticação quando reativada
+  // Autenticação desativada - sempre renderiza os children
   return <>{children}</>;
 };
 

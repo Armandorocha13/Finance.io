@@ -30,30 +30,50 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryAdded }) =>
   // Carregar categorias do localStorage na inicialização
   useEffect(() => {
     const savedCategories = localStorage.getItem('categories');
+    let loadedCategories: Category[] = [];
+    
     if (savedCategories) {
-      setCategories(JSON.parse(savedCategories));
-    } else {
-      // Categorias padrão
-      const defaultCategories: Category[] = [
-        // Receitas
-        { id: '1', name: 'Salário', type: 'income', isDefault: true },
-        { id: '2', name: 'Freelance', type: 'income', isDefault: true },
-        { id: '3', name: 'Investimentos', type: 'income', isDefault: true },
-        { id: '4', name: 'Vendas', type: 'income', isDefault: true },
-        { id: '5', name: 'Outros', type: 'income', isDefault: true },
-        // Despesas
-        { id: '6', name: 'Alimentação', type: 'expense', isDefault: true },
-        { id: '7', name: 'Transporte', type: 'expense', isDefault: true },
-        { id: '8', name: 'Moradia', type: 'expense', isDefault: true },
-        { id: '9', name: 'Utilidades', type: 'expense', isDefault: true },
-        { id: '10', name: 'Lazer', type: 'expense', isDefault: true },
-        { id: '11', name: 'Saúde', type: 'expense', isDefault: true },
-        { id: '12', name: 'Educação', type: 'expense', isDefault: true },
-        { id: '13', name: 'Compras', type: 'expense', isDefault: true },
-        { id: '14', name: 'Outros', type: 'expense', isDefault: true }
-      ];
+      try {
+        loadedCategories = JSON.parse(savedCategories);
+      } catch (e) {
+        console.error('Erro ao carregar categorias:', e);
+      }
+    }
+
+    // Categorias padrão - Futebol
+    const defaultCategories: Category[] = [
+      // Entradas (Receitas)
+      { id: '1', name: 'CARTÃO AMARELO', type: 'income', isDefault: true },
+      { id: '2', name: 'CARTÃO VERMELHO', type: 'income', isDefault: true },
+      { id: '3', name: 'MENSALIDADE', type: 'income', isDefault: true },
+      // Saídas (Despesas)
+      { id: '4', name: 'BOLA', type: 'expense', isDefault: true },
+      { id: '5', name: 'CAMPO', type: 'expense', isDefault: true },
+      { id: '6', name: 'FESTAS', type: 'expense', isDefault: true },
+      { id: '7', name: 'JUIZ', type: 'expense', isDefault: true },
+      { id: '8', name: 'LAVAGEM DE ROUPA', type: 'expense', isDefault: true },
+      { id: '9', name: 'MATERIAIS', type: 'expense', isDefault: true },
+      { id: '10', name: 'PASSAGEM GOLEIRO', type: 'expense', isDefault: true },
+      { id: '11', name: 'UNIFORMES', type: 'expense', isDefault: true }
+    ];
+
+    // Se não há categorias salvas, usar as padrão
+    if (loadedCategories.length === 0) {
       setCategories(defaultCategories);
       localStorage.setItem('categories', JSON.stringify(defaultCategories));
+    } else {
+      // Adicionar categorias padrão que não existem
+      const mergedCategories = [...loadedCategories];
+      defaultCategories.forEach(defaultCat => {
+        const exists = mergedCategories.some(
+          cat => cat.name === defaultCat.name && cat.type === defaultCat.type
+        );
+        if (!exists) {
+          mergedCategories.push(defaultCat);
+        }
+      });
+      setCategories(mergedCategories);
+      localStorage.setItem('categories', JSON.stringify(mergedCategories));
     }
   }, []);
 

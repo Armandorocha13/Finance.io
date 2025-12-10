@@ -1,8 +1,24 @@
+/**
+ * Dashboard.tsx
+ * 
+ * Componente principal do dashboard da aplicação Vaidoso FC
+ * 
+ * Funcionalidades:
+ * - Exibe resumo financeiro (receitas, despesas, saldo)
+ * - Gráficos de receitas vs despesas
+ * - Gráfico de distribuição de gastos por categoria
+ * - Lista de artilharia (Top 5 jogadores)
+ * - Navegação entre abas (Dashboard, Transações, Categorias, Artilharia, Relatório IA)
+ * 
+ * @author Vaidoso FC
+ * @version 1.0.0
+ */
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, TrendingDown, DollarSign, PieChart, Plus, LogOut, User, Tag, Wifi, WifiOff, Loader2, Brain } from 'lucide-react';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { TrendingUp, TrendingDown, DollarSign, PieChart, Plus, Tag, Wifi, WifiOff, Loader2, Brain } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, Pie, Legend } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -10,60 +26,41 @@ import { useTransactions } from '@/hooks/useTransactions';
 import TransactionForm from './TransactionForm';
 import TransactionList from './TransactionList';
 import CategoryManager from './CategoryManager';
+import ArtilhariaManager from './ArtilhariaManager';
 import AIReport from './AIReport';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { Header } from '@/components/ui/header-2';
+import { useArtilharia } from '@/hooks/useArtilharia';
+import { Trophy } from 'lucide-react';
 
+/**
+ * Componente Dashboard
+ * 
+ * Gerencia o estado da aba ativa e exibe diferentes conteúdos
+ * baseado na seleção do usuário no header.
+ * 
+ * @returns {JSX.Element} Dashboard completo com todas as funcionalidades
+ */
 const Dashboard = () => {
-  const { user, signOut } = useAuth();
-  const { toast } = useToast();
-  const { transactions, isLoading } = useTransactions();
-  const [showForm, setShowForm] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast.success("Você foi desconectado com sucesso.");
-    } catch (error) {
-      toast.error("Erro ao fazer logout. Tente novamente.");
-    }
-  };
+  // Hooks para dados
+  const { user } = useAuth();
+  const { transactions, isLoading, addTransaction } = useTransactions();
+  const { jogadores } = useArtilharia();
+  
+  // Estados locais
+  const [showForm, setShowForm] = useState(false); // Controla exibição do formulário de transação
+  const [activeTab, setActiveTab] = useState('dashboard'); // Aba ativa no momento
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <Header activeTab={activeTab} onTabChange={setActiveTab} />
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
             Olá, {user?.user_metadata?.name || 'Usuário'}
           </h1>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleSignOut}
-              className="hover:text-foreground/80"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-background/10 border-border">
-            <TabsTrigger value="dashboard" className="data-[state=active]:bg-background/20">
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="transactions" className="data-[state=active]:bg-background/20">
-              Transações
-            </TabsTrigger>
-            <TabsTrigger value="categories" className="data-[state=active]:bg-background/20 text-black">
-              Categorias
-            </TabsTrigger>
-            <TabsTrigger value="ai-report" className="data-[state=active]:bg-background/20">
-              Relatório IA
-            </TabsTrigger>
-          </TabsList>
 
           <TabsContent value="dashboard" className="space-y-4 sm:space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -258,6 +255,74 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Lista de Artilharia no Dashboard */}
+            <Card className="bg-card/10 backdrop-blur-lg border-border">
+              <CardHeader>
+                <CardTitle className="text-lg sm:text-xl text-card-foreground flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-yellow-500" />
+                  Artilharia - Top 5
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {jogadores.length > 0 ? (
+                  <>
+                    <div className="space-y-2">
+                      {jogadores.slice(0, 5).map((jogador, index) => (
+                        <div
+                          key={jogador.id}
+                          className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-500/20 text-yellow-500 font-bold">
+                              {index === 0 && jogador.gols > 0 ? (
+                                <Trophy className="w-5 h-5" />
+                              ) : (
+                                index + 1
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-foreground">{jogador.nome}</p>
+                              {jogador.posicao && (
+                                <p className="text-sm text-muted-foreground">{jogador.posicao}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl font-bold text-green-500">{jogador.gols}</span>
+                            <span className="text-sm text-muted-foreground">gols</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {jogadores.length > 5 && (
+                      <div className="mt-4 text-center">
+                        <Button
+                          variant="ghost"
+                          onClick={() => setActiveTab('artilharia')}
+                          className="text-sm"
+                        >
+                          Ver todos os jogadores ({jogadores.length})
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Nenhum jogador cadastrado ainda.</p>
+                    <p className="text-sm mt-2">Adicione jogadores na aba Artilharia para começar!</p>
+                    <Button
+                      variant="outline"
+                      onClick={() => setActiveTab('artilharia')}
+                      className="mt-4"
+                    >
+                      Ir para Artilharia
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="transactions" className="space-y-4 sm:space-y-6">
@@ -283,6 +348,10 @@ const Dashboard = () => {
             <CategoryManager />
           </TabsContent>
 
+          <TabsContent value="artilharia">
+            <ArtilhariaManager />
+          </TabsContent>
+
           <TabsContent value="ai-report">
             <AIReport timeframe="month" />
           </TabsContent>
@@ -292,8 +361,14 @@ const Dashboard = () => {
           <div className="fixed inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-card/10 backdrop-blur-lg border border-border rounded-2xl p-6 w-full max-w-md">
               <TransactionForm 
-                onSubmit={(data) => {
-                  setShowForm(false);
+                onSubmit={async (data) => {
+                  try {
+                    await addTransaction(data);
+                    setShowForm(false);
+                  } catch (error) {
+                    console.error('Erro ao salvar transação:', error);
+                    // O toast de erro já é exibido pelo hook
+                  }
                 }}
                 onCancel={() => setShowForm(false)}
               />
