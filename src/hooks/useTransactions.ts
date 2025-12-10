@@ -54,6 +54,19 @@ const isValidUUID = (str: string): boolean => {
   return uuidRegex.test(str);
 };
 
+/**
+ * Remove duplicatas de transações baseado no ID
+ */
+const removeDuplicates = (transactions: Transaction[]): Transaction[] => {
+  const seen = new Map<string, Transaction>();
+  for (const transaction of transactions) {
+    if (!seen.has(transaction.id)) {
+      seen.set(transaction.id, transaction);
+    }
+  }
+  return Array.from(seen.values());
+};
+
 export function useTransactions() {
   // Hooks e estados
   const { user } = useAuth();
@@ -76,15 +89,22 @@ export function useTransactions() {
         // Se não há usuário, tenta carregar do localStorage
         try {
           const savedTransactions = localStorage.getItem('transactions');
-      if (savedTransactions) {
-          const parsed = JSON.parse(savedTransactions);
-          setTransactions(parsed);
+          if (savedTransactions) {
+            const parsed = JSON.parse(savedTransactions);
+            // Remove duplicatas do localStorage
+            const uniqueParsed = removeDuplicates(parsed);
+            setTransactions(uniqueParsed);
+            // Atualiza o localStorage com dados sem duplicatas
+            if (uniqueParsed.length > 0) {
+              localStorage.setItem('transactions', JSON.stringify(uniqueParsed));
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao carregar transações do localStorage:', error);
+          localStorage.removeItem('transactions');
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error('Erro ao carregar transações do localStorage:', error);
-      } finally {
-        setIsLoading(false);
-      }
         return;
       }
 
@@ -109,12 +129,19 @@ export function useTransactions() {
           // Fallback para localStorage
           const savedTransactions = localStorage.getItem('transactions');
           if (savedTransactions) {
-            const parsed = JSON.parse(savedTransactions);
-            // Remove duplicatas do localStorage também
-            const uniqueParsed = parsed.filter((transaction: Transaction, index: number, self: Transaction[]) =>
-              index === self.findIndex(t => t.id === transaction.id)
-            );
-            setTransactions(uniqueParsed);
+            try {
+              const parsed = JSON.parse(savedTransactions);
+              // Remove duplicatas do localStorage usando a função auxiliar
+              const uniqueParsed = removeDuplicates(parsed);
+              setTransactions(uniqueParsed);
+              // Atualiza o localStorage com dados sem duplicatas
+              if (uniqueParsed.length > 0) {
+                localStorage.setItem('transactions', JSON.stringify(uniqueParsed));
+              }
+            } catch (error) {
+              console.error('Erro ao parsear transações do localStorage:', error);
+              localStorage.removeItem('transactions');
+            }
           }
         } else {
           // Converte os dados do Supabase para o formato Transaction
@@ -141,10 +168,8 @@ export function useTransactions() {
               user_id: item.user_id,
             };
           });
-          // Remove duplicatas baseado no ID antes de definir
-          const uniqueData = formattedData.filter((transaction, index, self) =>
-            index === self.findIndex(t => t.id === transaction.id)
-          );
+          // Remove duplicatas baseado no ID antes de definir usando a função auxiliar
+          const uniqueData = removeDuplicates(formattedData);
           
           setTransactions(uniqueData);
           // Sincroniza com localStorage como backup
@@ -162,14 +187,17 @@ export function useTransactions() {
           const savedTransactions = localStorage.getItem('transactions');
           if (savedTransactions) {
             const parsed = JSON.parse(savedTransactions);
-            // Remove duplicatas do localStorage também
-            const uniqueParsed = parsed.filter((transaction: Transaction, index: number, self: Transaction[]) =>
-              index === self.findIndex(t => t.id === transaction.id)
-            );
+            // Remove duplicatas do localStorage usando a função auxiliar
+            const uniqueParsed = removeDuplicates(parsed);
             setTransactions(uniqueParsed);
+            // Atualiza o localStorage com dados sem duplicatas
+            if (uniqueParsed.length > 0) {
+              localStorage.setItem('transactions', JSON.stringify(uniqueParsed));
+            }
           }
         } catch (localError) {
           console.error('Erro ao carregar do localStorage:', localError);
+          localStorage.removeItem('transactions');
         }
       } finally {
         setIsLoading(false);
@@ -198,16 +226,97 @@ export function useTransactions() {
             if (payload.eventType === 'INSERT') {
               setTransactions((prev) => {
                 // Verifica se a transação já existe antes de adicionar
-                const exists = prev.some(t => t.id === (payload.new as any).id);
-                if (exists) return prev; // Não adiciona se já existe
-                return [payload.new as Transaction, ...prev];
+                const newTransaction = payload.new as any;
+                const exists = prev.some(t => t.id === newTransaction.id);
+                if (exists) {
+                  console.log('⚠️ Transação duplicada detectada na subscription:', newTransaction.id);
+                  return prev; // Não adiciona se já existe
+                }
+                
+                // Formata a transação antes de adicionar
+                let dateStr = newTransaction.date;
+                if (dateStr instanceof Date) {
+                  const year = dateStr.getFullYear();
+                  const month = String(dateStr.getMonth() + 1).padStart(2, '0');
+                  const day = String(dateStr.getDate()).padStart(2, '0');
+                  dateStr = `${year}-${month}-${day}`;
+                } else if (typeof dateStr === 'string' && dateStr.includes('T')) {
+                  dateStr = dateStr.split('T')[0];
+                }
+                
+                const formattedTransaction: Transaction = {
+                  id: newTransaction.id,
+                  description: newTransaction.description || '',
+                  amount: newTransaction.amount,
+                  type: newTransaction.type as 'income' | 'expense',
+                  category: newTransaction.category,
+                  date: dateStr,
+                  user_id: newTransaction.user_id,
+                };
+                
+                const updated = [formattedTransaction, ...prev];
+                // Remove duplicatas após adicionar
+                const unique = updated.filter((t, index, self) =>
+                  index === self.findIndex(tr => tr.id === t.id)
+                );
+                
+                // Sincroniza com localStorage
+                if (unique.length > 0) {
+                  localStorage.setItem('transactions', JSON.stringify(unique));
+                }
+                
+                return unique;
               });
             } else if (payload.eventType === 'UPDATE') {
-              setTransactions((prev) =>
-                prev.map((t) => (t.id === payload.new.id ? payload.new as Transaction : t))
-              );
+              setTransactions((prev) => {
+                const updatedTransaction = payload.new as any;
+                
+                // Formata a transação antes de atualizar
+                let dateStr = updatedTransaction.date;
+                if (dateStr instanceof Date) {
+                  const year = dateStr.getFullYear();
+                  const month = String(dateStr.getMonth() + 1).padStart(2, '0');
+                  const day = String(dateStr.getDate()).padStart(2, '0');
+                  dateStr = `${year}-${month}-${day}`;
+                } else if (typeof dateStr === 'string' && dateStr.includes('T')) {
+                  dateStr = dateStr.split('T')[0];
+                }
+                
+                const formattedTransaction: Transaction = {
+                  id: updatedTransaction.id,
+                  description: updatedTransaction.description || '',
+                  amount: updatedTransaction.amount,
+                  type: updatedTransaction.type as 'income' | 'expense',
+                  category: updatedTransaction.category,
+                  date: dateStr,
+                  user_id: updatedTransaction.user_id,
+                };
+                
+                const updated = prev.map((t) => (t.id === formattedTransaction.id ? formattedTransaction : t));
+                
+                // Remove duplicatas após atualizar
+                const unique = updated.filter((t, index, self) =>
+                  index === self.findIndex(tr => tr.id === t.id)
+                );
+                
+                // Sincroniza com localStorage
+                if (unique.length > 0) {
+                  localStorage.setItem('transactions', JSON.stringify(unique));
+                }
+                
+                return unique;
+              });
             } else if (payload.eventType === 'DELETE') {
-              setTransactions((prev) => prev.filter((t) => t.id !== payload.old.id));
+              setTransactions((prev) => {
+                const updated = prev.filter((t) => t.id !== payload.old.id);
+                // Sincroniza com localStorage
+                if (updated.length > 0) {
+                  localStorage.setItem('transactions', JSON.stringify(updated));
+                } else {
+                  localStorage.removeItem('transactions');
+                }
+                return updated;
+              });
             }
           }
         )
@@ -277,21 +386,46 @@ export function useTransactions() {
       }
 
         // Sucesso no Supabase - formata os dados
+        let dateStr = data.date;
+        if (dateStr instanceof Date) {
+          const year = dateStr.getFullYear();
+          const month = String(dateStr.getMonth() + 1).padStart(2, '0');
+          const day = String(dateStr.getDate()).padStart(2, '0');
+          dateStr = `${year}-${month}-${day}`;
+        } else if (typeof dateStr === 'string' && dateStr.includes('T')) {
+          dateStr = dateStr.split('T')[0];
+        }
+        
         const formattedTransaction: Transaction = {
           id: data.id,
           description: data.description || '',
           amount: data.amount,
           type: data.type as 'income' | 'expense',
           category: data.category,
-          date: data.date,
+          date: dateStr,
           user_id: data.user_id,
         };
 
         setTransactions((prev) => {
+          // Verifica se a transação já existe antes de adicionar
+          const exists = prev.some(t => t.id === formattedTransaction.id);
+          if (exists) {
+            console.log('⚠️ Transação duplicada detectada ao adicionar:', formattedTransaction.id);
+            // Se já existe, atualiza ao invés de adicionar
+            const updated = prev.map(t => t.id === formattedTransaction.id ? formattedTransaction : t);
+            localStorage.setItem('transactions', JSON.stringify(updated));
+            return updated;
+          }
+          
           const updated = [...prev, formattedTransaction];
+          // Remove duplicatas antes de salvar
+          const unique = updated.filter((t, index, self) =>
+            index === self.findIndex(tr => tr.id === t.id)
+          );
+          
           // Sincroniza com localStorage como backup
-          localStorage.setItem('transactions', JSON.stringify(updated));
-          return updated;
+          localStorage.setItem('transactions', JSON.stringify(unique));
+          return unique;
         });
 
       toast.success("Sua transação foi salva com sucesso no banco de dados.");
@@ -307,9 +441,21 @@ export function useTransactions() {
       };
 
       setTransactions((prev) => {
+        // Verifica se a transação já existe antes de adicionar
+        const exists = prev.some(t => t.id === transaction.id);
+        if (exists) {
+          console.log('⚠️ Transação duplicada detectada no fallback:', transaction.id);
+          // Se já existe, atualiza ao invés de adicionar
+          const updated = prev.map(t => t.id === transaction.id ? transaction : t);
+          localStorage.setItem('transactions', JSON.stringify(updated));
+          return updated;
+        }
+        
         const updated = [...prev, transaction];
-        localStorage.setItem('transactions', JSON.stringify(updated));
-        return updated;
+        // Remove duplicatas antes de salvar
+        const unique = removeDuplicates(updated);
+        localStorage.setItem('transactions', JSON.stringify(unique));
+        return unique;
       });
 
       toast.warning("Transação salva localmente. Erro ao conectar com o banco de dados.");

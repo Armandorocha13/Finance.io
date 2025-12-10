@@ -22,7 +22,7 @@ import { TrendingUp, TrendingDown, DollarSign, PieChart as PieChartIcon, Plus, T
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useTransactions, Transaction } from '@/hooks/useTransactions';
 import TransactionForm from './TransactionForm';
 import TransactionList from './TransactionList';
 import CategoryManager from './CategoryManager';
@@ -58,13 +58,31 @@ const Dashboard = () => {
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
 
+  // Função auxiliar para garantir que amount seja sempre um número
+  const getAmount = (amount: any): number => {
+    if (typeof amount === 'number') {
+      return isNaN(amount) ? 0 : amount;
+    }
+    const parsed = parseFloat(String(amount));
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  // Remove duplicatas de forma mais robusta usando Map
+  const removeDuplicates = (transactions: Transaction[]): Transaction[] => {
+    const seen = new Map<string, Transaction>();
+    for (const transaction of transactions) {
+      if (!seen.has(transaction.id)) {
+        seen.set(transaction.id, transaction);
+      }
+    }
+    return Array.from(seen.values());
+  };
+
   // Filtra transações baseado no filtro selecionado
   // Remove duplicatas baseado no ID antes de filtrar
   const filteredTransactions = useMemo(() => {
-    // Remove transações duplicadas (mesmo ID)
-    const uniqueTransactions = transactions.filter((transaction, index, self) =>
-      index === self.findIndex(t => t.id === transaction.id)
-    );
+    // Remove transações duplicadas (mesmo ID) usando Map para garantir unicidade
+    const uniqueTransactions = removeDuplicates(transactions);
     
     const filtered = filterTransactionsByDate(
       uniqueTransactions,
@@ -73,30 +91,55 @@ const Dashboard = () => {
       filterType === 'month' ? selectedMonth : undefined
     );
     
-    // Debug: Log para verificar transações de entrada
-    if (process.env.NODE_ENV === 'development') {
-      const incomeTransactions = filtered.filter(t => t.type === 'income');
-      const totalIncome = incomeTransactions.reduce((sum, t) => {
-        const amount = typeof t.amount === 'number' ? t.amount : parseFloat(String(t.amount)) || 0;
-        return sum + amount;
-      }, 0);
-      console.log('🔍 Debug Dashboard:', {
-        totalTransactions: transactions.length,
-        uniqueTransactions: uniqueTransactions.length,
-        filteredTransactions: filtered.length,
-        incomeTransactions: incomeTransactions.length,
-        totalIncome: totalIncome,
-        incomeDetails: incomeTransactions.map(t => ({
-          id: t.id,
-          description: t.description,
-          amount: t.amount,
-          date: t.date
-        }))
-      });
-    }
+    // Debug: Log detalhado para verificar transações de entrada
+    const incomeTransactions = filtered.filter(t => t.type === 'income');
+    const expenseTransactions = filtered.filter(t => t.type === 'expense');
+    
+    const totalIncome = incomeTransactions.reduce((sum, t) => sum + getAmount(t.amount), 0);
+    const totalExpenses = expenseTransactions.reduce((sum, t) => sum + getAmount(t.amount), 0);
+    
+    console.log('🔍 Debug Dashboard - Cálculo Detalhado:', {
+      totalTransactions: transactions.length,
+      uniqueTransactions: uniqueTransactions.length,
+      filteredTransactions: filtered.length,
+      incomeTransactions: incomeTransactions.length,
+      expenseTransactions: expenseTransactions.length,
+      totalIncome: totalIncome,
+      totalExpenses: totalExpenses,
+      incomeDetails: incomeTransactions.map(t => ({
+        id: t.id,
+        description: t.description,
+        amount: getAmount(t.amount),
+        date: t.date,
+        type: t.type
+      })),
+      allTransactionIds: filtered.map(t => t.id),
+      duplicateCheck: {
+        totalIds: transactions.length,
+        uniqueIds: new Set(transactions.map(t => t.id)).size,
+        hasDuplicates: transactions.length !== new Set(transactions.map(t => t.id)).size
+      }
+    });
     
     return filtered;
   }, [transactions, filterType, selectedYear, selectedMonth]);
+
+  // Calcula totais de forma consistente
+  const totalIncome = useMemo(() => {
+    return filteredTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + getAmount(t.amount), 0);
+  }, [filteredTransactions]);
+
+  const totalExpenses = useMemo(() => {
+    return filteredTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + getAmount(t.amount), 0);
+  }, [filteredTransactions]);
+
+  const netBalance = useMemo(() => {
+    return totalIncome - totalExpenses;
+  }, [totalIncome, totalExpenses]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -126,14 +169,7 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-500">
-                    R$ {filteredTransactions
-                      .filter(t => t.type === 'income')
-                      .reduce((sum, t) => {
-                        // Garante que amount é um número
-                        const amount = typeof t.amount === 'number' ? t.amount : parseFloat(String(t.amount)) || 0;
-                        return sum + amount;
-                      }, 0)
-                      .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {getFilterDescription(filterType, selectedYear, selectedMonth)}
@@ -150,10 +186,7 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-red-500">
-                    R$ {filteredTransactions
-                      .filter(t => t.type === 'expense')
-                      .reduce((sum, t) => sum + t.amount, 0)
-                      .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {getFilterDescription(filterType, selectedYear, selectedMonth)}
@@ -170,13 +203,7 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-blue-500">
-                    R$ {(filteredTransactions
-                      .filter(t => t.type === 'income')
-                      .reduce((sum, t) => sum + t.amount, 0) -
-                      filteredTransactions
-                        .filter(t => t.type === 'expense')
-                        .reduce((sum, t) => sum + t.amount, 0))
-                      .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {netBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {getFilterDescription(filterType, selectedYear, selectedMonth)}
@@ -193,12 +220,10 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-purple-500">
-                    R$ {(filteredTransactions
-                      .reduce((sum, t) => sum + t.amount, 0))
-                      .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {getFilterDescription(filterType, selectedYear, selectedMonth)}
+                    Total de Entradas ({getFilterDescription(filterType, selectedYear, selectedMonth)})
                   </p>
                 </CardContent>
               </Card>
@@ -216,12 +241,13 @@ const Dashboard = () => {
                     <PieChart>
                       <Pie
                         data={(() => {
-                          // Calcula totais de entradas e saídas
+                          // Calcula totais de entradas e saídas usando a mesma lógica dos cards
                           const totals = filteredTransactions.reduce((acc, transaction) => {
+                            const amount = getAmount(transaction.amount);
                             if (transaction.type === 'income') {
-                              acc.entradas += transaction.amount;
+                              acc.entradas += amount;
                             } else {
-                              acc.saidas += transaction.amount;
+                              acc.saidas += amount;
                             }
                             return acc;
                           }, { entradas: 0, saidas: 0 });
@@ -258,10 +284,11 @@ const Dashboard = () => {
                       >
                         {(() => {
                           const data = filteredTransactions.reduce((acc, transaction) => {
+                            const amount = getAmount(transaction.amount);
                             if (transaction.type === 'income') {
-                              acc.entradas += transaction.amount;
+                              acc.entradas += amount;
                             } else {
-                              acc.saidas += transaction.amount;
+                              acc.saidas += amount;
                             }
                             return acc;
                           }, { entradas: 0, saidas: 0 });
