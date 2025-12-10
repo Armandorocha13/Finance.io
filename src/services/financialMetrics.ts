@@ -1,4 +1,4 @@
-import { Transaction } from '@/types/financial';
+import { Transaction } from '@/hooks/useTransactions';
 
 export interface FinancialMetrics {
   monthlyIncome: number;
