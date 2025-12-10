@@ -4,8 +4,8 @@
  * Componente principal do dashboard da aplicação Vaidoso FC
  * 
  * Funcionalidades:
- * - Exibe resumo financeiro (receitas, despesas, saldo)
- * - Gráficos de receitas vs despesas
+ * - Exibe resumo financeiro (Entradas, Saídas, Liquido)
+ * - Gráficos de Entradas vs Saídas
  * - Gráfico de distribuição de gastos por categoria
  * - Lista de artilharia (Top 5 jogadores)
  * - Navegação entre abas (Dashboard, Transações, Categorias, Artilharia, Relatório IA)
@@ -67,7 +67,7 @@ const Dashboard = () => {
               <Card className="bg-card/10 backdrop-blur-lg border-border">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-card-foreground/80">
-                    Receitas
+                    Entradas
                   </CardTitle>
                   <TrendingUp className="h-4 w-4 text-green-500" />
                 </CardHeader>
@@ -84,7 +84,7 @@ const Dashboard = () => {
               <Card className="bg-card/10 backdrop-blur-lg border-border">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-card-foreground/80">
-                    Despesas
+                    Saídas
                   </CardTitle>
                   <TrendingDown className="h-4 w-4 text-red-500" />
                 </CardHeader>
@@ -101,7 +101,7 @@ const Dashboard = () => {
               <Card className="bg-card/10 backdrop-blur-lg border-border">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-card-foreground/80">
-                    Saldo
+                    Liquido
                   </CardTitle>
                   <DollarSign className="h-4 w-4 text-blue-500" />
                 </CardHeader>
@@ -137,14 +137,42 @@ const Dashboard = () => {
               <Card className="bg-card/10 backdrop-blur-lg border-border">
                 <CardHeader>
                   <CardTitle className="text-lg sm:text-xl text-card-foreground">
-                    Receitas vs Despesas
+                    Entradas vs Saídas
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="h-[300px] sm:h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={transactions}>
+                    <LineChart data={(() => {
+                      // Agrupa transações por data e separa entradas e saídas
+                      const groupedByDate = transactions.reduce((acc, transaction) => {
+                        const date = transaction.date;
+                        if (!acc[date]) {
+                          acc[date] = { date, entradas: 0, saidas: 0 };
+                        }
+                        if (transaction.type === 'income') {
+                          acc[date].entradas += transaction.amount;
+                        } else {
+                          acc[date].saidas += transaction.amount;
+                        }
+                        return acc;
+                      }, {} as Record<string, { date: string; entradas: number; saidas: number }>);
+
+                      // Converte para array e ordena por data
+                      return Object.values(groupedByDate).sort((a, b) => 
+                        new Date(a.date).getTime() - new Date(b.date).getTime()
+                      );
+                    })()}>
                       <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
-                      <XAxis dataKey="date" stroke="currentColor" fontSize={12} opacity={0.5} />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="currentColor" 
+                        fontSize={12} 
+                        opacity={0.5}
+                        tickFormatter={(value) => {
+                          const date = new Date(value);
+                          return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                        }}
+                      />
                       <YAxis stroke="currentColor" fontSize={12} opacity={0.5} />
                       <Tooltip 
                         contentStyle={{ 
@@ -153,21 +181,41 @@ const Dashboard = () => {
                           borderRadius: '8px',
                           color: 'var(--foreground)',
                           fontSize: '12px'
-                        }} 
+                        }}
+                        formatter={(value: number, name: string) => [
+                          new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                          }).format(value),
+                          name
+                        ]}
+                        labelFormatter={(label) => {
+                          const date = new Date(label);
+                          return date.toLocaleDateString('pt-BR', { 
+                            day: '2-digit', 
+                            month: '2-digit', 
+                            year: 'numeric' 
+                          });
+                        }}
                       />
+                      <Legend />
                       <Line 
                         type="monotone" 
-                        dataKey="amount" 
+                        dataKey="entradas" 
                         stroke="#10B981" 
                         strokeWidth={3}
-                        name="Receitas"
+                        name="Entradas"
+                        dot={{ fill: '#10B981', r: 4 }}
+                        activeDot={{ r: 6 }}
                       />
                       <Line 
                         type="monotone" 
-                        dataKey="amount" 
+                        dataKey="saidas" 
                         stroke="#EF4444" 
                         strokeWidth={3}
-                        name="Despesas"
+                        name="Saídas"
+                        dot={{ fill: '#EF4444', r: 4 }}
+                        activeDot={{ r: 6 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>

@@ -25,7 +25,7 @@ export interface Transaction {
   id: string; // ID único da transação
   description: string; // Descrição da transação
   amount: number; // Valor da transação
-  type: 'income' | 'expense'; // Tipo: receita ou despesa
+  type: 'income' | 'expense'; // Tipo: entrada ou saída
   category: string; // Categoria da transação
   date: string; // Data da transação (ISO string)
   user_id: string; // ID do usuário (mock quando autenticação desativada)

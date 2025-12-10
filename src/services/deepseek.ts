@@ -28,12 +28,12 @@ export async function generateAIReport(prompt: string): Promise<string> {
 function extractFinancialData(prompt: string): FinancialData {
   try {
     const timeframeMatch = prompt.match(/período \((.*?)\)/);
-    const incomeMatch = prompt.match(/Receita total: R\$ ([\d.,]+)/);
-    const expensesMatch = prompt.match(/Despesas totais: R\$ ([\d.,]+)/);
-    const balanceMatch = prompt.match(/Saldo: R\$ ([\d.,]+)/);
+    const incomeMatch = prompt.match(/Entrada total: R\$ ([\d.,]+)/);
+    const expensesMatch = prompt.match(/Saídas totais: R\$ ([\d.,]+)/);
+    const balanceMatch = prompt.match(/Liquido: R\$ ([\d.,]+)/);
     
-    // Extrair categorias de despesas
-    const categoryStart = prompt.indexOf('Despesas por categoria:') + 'Despesas por categoria:'.length;
+    // Extrair categorias de Saídas
+    const categoryStart = prompt.indexOf('Saídas por categoria:') + 'Saídas por categoria:'.length;
     const categoryEnd = prompt.indexOf('Maiores gastos:');
     let categoriesJson = prompt.slice(categoryStart, categoryEnd).trim();
     
@@ -125,12 +125,12 @@ function generateLocalReport(data: FinancialData): string {
 
 💰 VISÃO GERAL
 ${status}
-- Receitas: ${formatCurrency(totalIncome)} 📈
-- Despesas: ${formatCurrency(totalExpenses)} 📉
-- Saldo: ${formatCurrency(balance)} ${balance >= 0 ? '🟢' : '🔴'}
+- Entradas: ${formatCurrency(totalIncome)} 📈
+- Saídas: ${formatCurrency(totalExpenses)} 📉
+- Liquido: ${formatCurrency(balance)} ${balance >= 0 ? '🟢' : '🔴'}
 - Taxa de Economia: ${savingsRate}% ${Number(savingsRate) > 20 ? '🌟' : ''}
 
-📋 ANÁLISE DE DESPESAS POR CATEGORIA
+📋 ANÁLISE DE Saidas POR CATEGORIA
 ${sortedCategories.join('\n')}
 
 💸 MAIORES GASTOS
@@ -140,9 +140,9 @@ ${recommendations}
 
 🎯 METAS SUGERIDAS
 1. ${balance >= 0 
-  ? `Manter o saldo positivo e aumentar a taxa de economia para ${Math.min(Number(savingsRate) + 5, 30)}%`
-  : 'Reduzir despesas para alcançar um saldo positivo nos próximos meses'}
-2. Criar um fundo de emergência equivalente a 3-6 meses de despesas
+  ? `Manter o Liquido positivo e aumentar a taxa de economia para ${Math.min(Number(savingsRate) + 5, 30)}%`
+  : 'Reduzir Saidas para alcançar um Liquido positivo nos próximos meses'}
+2. Criar um fundo de emergência equivalente a 3-6 meses de Saidas
 3. ${Number(savingsRate) < 20 
   ? 'Aumentar a taxa de economia para pelo menos 20%' 
   : 'Considerar investimentos para seu dinheiro guardado'}
@@ -162,7 +162,7 @@ function generateRecommendations(data: FinancialData): string {
   recommendations.push('📝 RECOMENDAÇÕES');
   
   if (balance < 0) {
-    recommendations.push('- ⚠️ Reduzir despesas imediatamente para evitar endividamento');
+    recommendations.push('- ⚠️ Reduzir Saidas imediatamente para evitar endividamento');
   }
   
   if (Number(totalExpensesPercentage) > 80) {

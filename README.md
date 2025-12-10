@@ -6,7 +6,7 @@ Finance io é uma aplicação web moderna para gerenciamento financeiro pessoal,
 ## Funcionalidades Principais 🚀
 
 ### 1. Gestão de Transações
-- Adicionar receitas e despesas
+- Adicionar Entradas e Saidas
 - Categorização automática
 - Visualização detalhada
 - Exclusão de transações
@@ -14,9 +14,9 @@ Finance io é uma aplicação web moderna para gerenciamento financeiro pessoal,
 
 ### 2. Dashboard Interativo
 - Resumo financeiro
-- Gráfico de receitas vs despesas
+- Gráfico de Entradas vs Saidas
 - Gráfico de gastos por categoria
-- Saldo atual
+- Liquido atual
 - Indicadores visuais
 
 ### 3. Categorias Personalizadas
@@ -138,7 +138,7 @@ npm run dev
 
 ### Gerenciamento Diário
 1. Registre transações
-2. Monitore seu saldo
+2. Monitore seu Liquido
 3. Analise os gráficos
 4. Verifique relatórios
 

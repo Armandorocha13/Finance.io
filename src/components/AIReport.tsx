@@ -61,7 +61,7 @@ const AIReport: React.FC<AIReportProps> = ({ timeframe = 'month' }) => {
 
       console.log('Métricas calculadas:', { totalIncome, totalExpenses, balance });
 
-      // Categorizar despesas
+      // Categorizar Saidas
       const expensesByCategory = filteredTransactions
         .filter(t => t.type === 'expense')
         .reduce((acc, t) => {
@@ -83,10 +83,10 @@ const AIReport: React.FC<AIReportProps> = ({ timeframe = 'month' }) => {
         Analise os seguintes dados financeiros do período (${timeframe}) e gere um relatório detalhado e personalizado em português.
 
         DADOS FINANCEIROS:
-        - Receita total: R$ ${totalIncome.toFixed(2)}
-        - Despesas totais: R$ ${totalExpenses.toFixed(2)}
-        - Saldo: R$ ${balance.toFixed(2)}
-        - Despesas por categoria: ${JSON.stringify(expensesByCategory, null, 2)}
+        - Entrada total: R$ ${totalIncome.toFixed(2)}
+        - Saídas totais: R$ ${totalExpenses.toFixed(2)}
+        - Liquido: R$ ${balance.toFixed(2)}
+        - Saídas por categoria: ${JSON.stringify(expensesByCategory, null, 2)}
         - Maiores gastos: ${JSON.stringify(topExpenses, null, 2)}
 
         INSTRUÇÕES:

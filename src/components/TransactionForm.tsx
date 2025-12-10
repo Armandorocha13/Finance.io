@@ -52,11 +52,11 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, onCancel })
 
       // Categorias padrão - Futebol (mesmas do CategoryManager)
       const defaultCategories: Category[] = [
-        // Entradas (Receitas)
+        // Entradas (Entradas)
         { id: '1', name: 'CARTÃO AMARELO', type: 'income', isDefault: true },
         { id: '2', name: 'CARTÃO VERMELHO', type: 'income', isDefault: true },
         { id: '3', name: 'MENSALIDADE', type: 'income', isDefault: true },
-        // Saídas (Despesas)
+        // Saídas (Saidas)
         { id: '4', name: 'BOLA', type: 'expense', isDefault: true },
         { id: '5', name: 'CAMPO', type: 'expense', isDefault: true },
         { id: '6', name: 'FESTAS', type: 'expense', isDefault: true },
@@ -105,7 +105,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, onCancel })
   }, []);
 
   /**
-   * Filtra categorias por tipo (receita ou despesa)
+   * Filtra categorias por tipo (entrada ou saída)
    */
   const getCategoriesByType = (type: 'income' | 'expense'): string[] => {
     return categories
@@ -189,8 +189,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, onCancel })
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-slate-800 border-slate-700">
-              <SelectItem value="income" className="text-green-400">Receita</SelectItem>
-              <SelectItem value="expense" className="text-red-400">Despesa</SelectItem>
+              <SelectItem value="income" className="text-green-400">Entrada</SelectItem>
+              <SelectItem value="expense" className="text-red-400">Saída</SelectItem>
             </SelectContent>
           </Select>
         </div>

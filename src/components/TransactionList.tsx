@@ -10,7 +10,7 @@ interface Transaction {
   id: string;           // Identificador único da transação
   description: string;  // Descrição da transação
   amount: number;       // Valor da transação
-  type: 'income' | 'expense';  // Tipo: receita ou despesa
+  type: 'income' | 'expense';  // Tipo: entrada ou saída
   category: string;     // Categoria da transação
   date: string;        // Data da transação
 }

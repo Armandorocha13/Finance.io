@@ -23,13 +23,13 @@
 CREATE OR REPLACE FUNCTION public.create_default_categories()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Categorias de Entradas (Receitas)
+    -- Categorias de Entradas (Entradas)
     INSERT INTO public.categories (user_id, name, type, is_default) VALUES
         (NEW.id, 'CARTÃO AMARELO', 'income', true),
         (NEW.id, 'CARTÃO VERMELHO', 'income', true),
         (NEW.id, 'MENSALIDADE', 'income', true);
     
-    -- Categorias de Saídas (Despesas)
+    -- Categorias de Saídas (Saidas)
     INSERT INTO public.categories (user_id, name, type, is_default) VALUES
         (NEW.id, 'BOLA', 'expense', true),
         (NEW.id, 'CAMPO', 'expense', true),
@@ -76,14 +76,14 @@ BEGIN
     DELETE FROM public.categories 
     WHERE user_id = target_user_id AND is_default = true;
     
-    -- Categorias de Entradas (Receitas)
+    -- Categorias de Entradas (Entradas)
     INSERT INTO public.categories (user_id, name, type, is_default) VALUES
         (target_user_id, 'CARTÃO AMARELO', 'income', true),
         (target_user_id, 'CARTÃO VERMELHO', 'income', true),
         (target_user_id, 'MENSALIDADE', 'income', true)
     ON CONFLICT (user_id, name, type) DO NOTHING;
     
-    -- Categorias de Saídas (Despesas)
+    -- Categorias de Saídas (Saidas)
     INSERT INTO public.categories (user_id, name, type, is_default) VALUES
         (target_user_id, 'BOLA', 'expense', true),
         (target_user_id, 'CAMPO', 'expense', true),

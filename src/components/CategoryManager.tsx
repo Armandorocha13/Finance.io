@@ -42,11 +42,11 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryAdded }) =>
 
     // Categorias padrão - Futebol
     const defaultCategories: Category[] = [
-      // Entradas (Receitas)
+      // Entradas (Entradas)
       { id: '1', name: 'CARTÃO AMARELO', type: 'income', isDefault: true },
       { id: '2', name: 'CARTÃO VERMELHO', type: 'income', isDefault: true },
       { id: '3', name: 'MENSALIDADE', type: 'income', isDefault: true },
-      // Saídas (Despesas)
+      // Saídas (Saidas)
       { id: '4', name: 'BOLA', type: 'expense', isDefault: true },
       { id: '5', name: 'CAMPO', type: 'expense', isDefault: true },
       { id: '6', name: 'FESTAS', type: 'expense', isDefault: true },
@@ -191,16 +191,16 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryAdded }) =>
         <Tabs value={categoryType} onValueChange={(value) => setCategoryType(value as 'income' | 'expense')}>
           <TabsList className="grid w-full grid-cols-2 dark-mode-bg">
             <TabsTrigger value="income" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-400">
-              Receitas
+              Entradas
             </TabsTrigger>
             <TabsTrigger value="expense" className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400">
-              Despesas
+              Saidas
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="income" className="space-y-4">
             <div className="space-y-2">
-              <h3 className="text-sm font-medium text-slate-300">Categorias de Receita</h3>
+              <h3 className="text-sm font-medium text-slate-300">Categorias de Entrada</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {categories
                   .filter(cat => cat.type === 'income')
@@ -261,7 +261,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryAdded }) =>
 
           <TabsContent value="expense" className="space-y-4">
             <div className="space-y-2">
-              <h3 className="text-sm font-medium text-slate-300">Categorias de Despesa</h3>
+              <h3 className="text-sm font-medium text-slate-300">Categorias de Saída</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {categories
                   .filter(cat => cat.type === 'expense')
@@ -331,8 +331,8 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onCategoryAdded }) =>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="income" className="text-green-400">Receita</SelectItem>
-                  <SelectItem value="expense" className="text-red-400">Despesa</SelectItem>
+                  <SelectItem value="income" className="text-green-400">Entrada</SelectItem>
+                  <SelectItem value="expense" className="text-red-400">Saída</SelectItem>
                 </SelectContent>
               </Select>
             </div>

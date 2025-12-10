@@ -6,7 +6,7 @@
 -- necessárias para o funcionamento da aplicação Vaidoso FC.
 --
 -- Tabelas criadas:
--- 1. transactions - Transações financeiras (receitas e despesas)
+-- 1. transactions - Transações financeiras (Entradas e Saidas)
 -- 2. categories - Categorias de transações
 -- 3. artilharia - Jogadores e gols (artilharia do clube)
 --
@@ -31,7 +31,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ----------------------------------------------------------------------------
 -- Tabela: categories
--- Descrição: Armazena categorias de transações (receitas e despesas)
+-- Descrição: Armazena categorias de transações (Entradas e Saidas)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -56,7 +56,7 @@ COMMENT ON COLUMN public.categories.is_default IS 'Indica se é uma categoria pa
 
 -- ----------------------------------------------------------------------------
 -- Tabela: transactions
--- Descrição: Armazena transações financeiras (receitas e despesas)
+-- Descrição: Armazena transações financeiras (Entradas e Saidas)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.transactions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
