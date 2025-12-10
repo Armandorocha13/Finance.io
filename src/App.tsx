@@ -22,7 +22,7 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import { PayPalScriptProvider } from "@paypal/react-paypal-js";
+// import { PayPalScriptProvider } from "@paypal/react-paypal-js"; // Desabilitado - não está sendo usado
 
 // Configuração do React Query para gerenciamento de estado do servidor
 // Permite cache, refetch automático e sincronização de dados
@@ -36,11 +36,13 @@ const queryClient = new QueryClient({
 });
 
 // Configuração do PayPal para pagamentos (se necessário no futuro)
-const paypalOptions = {
-  clientId: "AQwaPBQ4JXVwZpQKzD3xvXtXHxVYGBHqHGF-68qh1Z_kvYUoaiNUzHK9NNNQbVoDPsG2TDuZEZZEDhsE",
-  currency: "BRL",
-  intent: "capture",
-};
+// Desabilitado por enquanto para evitar erros no console
+// Para habilitar, descomente o import e o provider abaixo
+// const paypalOptions = {
+//   clientId: "SEU_CLIENT_ID_AQUI",
+//   currency: "BRL",
+//   intent: "capture",
+// };
 
 /**
  * Componente principal da aplicação
@@ -61,7 +63,8 @@ const App = () => (
         <Toaster />
         <Sonner />
         
-        <PayPalScriptProvider options={paypalOptions}>
+        {/* PayPal desabilitado - não está sendo usado */}
+        {/* <PayPalScriptProvider options={paypalOptions}> */}
           <AuthProvider>
             <BrowserRouter>
               <Routes>
@@ -76,7 +79,7 @@ const App = () => (
               </Routes>
             </BrowserRouter>
           </AuthProvider>
-        </PayPalScriptProvider>
+        {/* </PayPalScriptProvider> */}
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
