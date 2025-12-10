@@ -110,7 +110,11 @@ export function useTransactions() {
           const savedTransactions = localStorage.getItem('transactions');
           if (savedTransactions) {
             const parsed = JSON.parse(savedTransactions);
-            setTransactions(parsed);
+            // Remove duplicatas do localStorage também
+            const uniqueParsed = parsed.filter((transaction: Transaction, index: number, self: Transaction[]) =>
+              index === self.findIndex(t => t.id === transaction.id)
+            );
+            setTransactions(uniqueParsed);
           }
         } else {
           // Converte os dados do Supabase para o formato Transaction
@@ -137,10 +141,15 @@ export function useTransactions() {
               user_id: item.user_id,
             };
           });
-          setTransactions(formattedData);
+          // Remove duplicatas baseado no ID antes de definir
+          const uniqueData = formattedData.filter((transaction, index, self) =>
+            index === self.findIndex(t => t.id === transaction.id)
+          );
+          
+          setTransactions(uniqueData);
           // Sincroniza com localStorage como backup
-          if (formattedData.length > 0) {
-            localStorage.setItem('transactions', JSON.stringify(formattedData));
+          if (uniqueData.length > 0) {
+            localStorage.setItem('transactions', JSON.stringify(uniqueData));
           }
         }
       } catch (error: any) {
@@ -153,7 +162,11 @@ export function useTransactions() {
           const savedTransactions = localStorage.getItem('transactions');
           if (savedTransactions) {
             const parsed = JSON.parse(savedTransactions);
-            setTransactions(parsed);
+            // Remove duplicatas do localStorage também
+            const uniqueParsed = parsed.filter((transaction: Transaction, index: number, self: Transaction[]) =>
+              index === self.findIndex(t => t.id === transaction.id)
+            );
+            setTransactions(uniqueParsed);
           }
         } catch (localError) {
           console.error('Erro ao carregar do localStorage:', localError);
@@ -183,7 +196,12 @@ export function useTransactions() {
           },
           (payload) => {
             if (payload.eventType === 'INSERT') {
-              setTransactions((prev) => [payload.new as Transaction, ...prev]);
+              setTransactions((prev) => {
+                // Verifica se a transação já existe antes de adicionar
+                const exists = prev.some(t => t.id === (payload.new as any).id);
+                if (exists) return prev; // Não adiciona se já existe
+                return [payload.new as Transaction, ...prev];
+              });
             } else if (payload.eventType === 'UPDATE') {
               setTransactions((prev) =>
                 prev.map((t) => (t.id === payload.new.id ? payload.new as Transaction : t))

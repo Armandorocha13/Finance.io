@@ -59,13 +59,43 @@ const Dashboard = () => {
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
 
   // Filtra transações baseado no filtro selecionado
+  // Remove duplicatas baseado no ID antes de filtrar
   const filteredTransactions = useMemo(() => {
-    return filterTransactionsByDate(
-      transactions,
+    // Remove transações duplicadas (mesmo ID)
+    const uniqueTransactions = transactions.filter((transaction, index, self) =>
+      index === self.findIndex(t => t.id === transaction.id)
+    );
+    
+    const filtered = filterTransactionsByDate(
+      uniqueTransactions,
       filterType,
       filterType === 'month' ? selectedYear : undefined,
       filterType === 'month' ? selectedMonth : undefined
     );
+    
+    // Debug: Log para verificar transações de entrada
+    if (process.env.NODE_ENV === 'development') {
+      const incomeTransactions = filtered.filter(t => t.type === 'income');
+      const totalIncome = incomeTransactions.reduce((sum, t) => {
+        const amount = typeof t.amount === 'number' ? t.amount : parseFloat(String(t.amount)) || 0;
+        return sum + amount;
+      }, 0);
+      console.log('🔍 Debug Dashboard:', {
+        totalTransactions: transactions.length,
+        uniqueTransactions: uniqueTransactions.length,
+        filteredTransactions: filtered.length,
+        incomeTransactions: incomeTransactions.length,
+        totalIncome: totalIncome,
+        incomeDetails: incomeTransactions.map(t => ({
+          id: t.id,
+          description: t.description,
+          amount: t.amount,
+          date: t.date
+        }))
+      });
+    }
+    
+    return filtered;
   }, [transactions, filterType, selectedYear, selectedMonth]);
 
   return (
@@ -98,7 +128,11 @@ const Dashboard = () => {
                   <div className="text-2xl font-bold text-green-500">
                     R$ {filteredTransactions
                       .filter(t => t.type === 'income')
-                      .reduce((sum, t) => sum + t.amount, 0)
+                      .reduce((sum, t) => {
+                        // Garante que amount é um número
+                        const amount = typeof t.amount === 'number' ? t.amount : parseFloat(String(t.amount)) || 0;
+                        return sum + amount;
+                      }, 0)
                       .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
