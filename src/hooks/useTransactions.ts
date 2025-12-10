@@ -93,6 +93,25 @@ export function useTransactions() {
             const parsed = JSON.parse(savedTransactions);
             // Remove duplicatas do localStorage
             const uniqueParsed = removeDuplicates(parsed);
+            
+            // Debug: Verificar transações de entrada do localStorage
+            const incomeFromLocalStorage = uniqueParsed.filter((t: Transaction) => t.type === 'income');
+            const totalIncomeFromLocalStorage = incomeFromLocalStorage.reduce((sum: number, t: Transaction) => sum + (t.amount || 0), 0);
+            
+            console.log('💾 Transações carregadas do localStorage:', {
+              total: parsed.length,
+              unicas: uniqueParsed.length,
+              duplicatasRemovidas: parsed.length - uniqueParsed.length,
+              entradas: incomeFromLocalStorage.length,
+              totalEntradas: totalIncomeFromLocalStorage,
+              detalhesEntradas: incomeFromLocalStorage.map((t: Transaction) => ({
+                id: t.id,
+                description: t.description,
+                amount: t.amount,
+                date: t.date
+              }))
+            });
+            
             setTransactions(uniqueParsed);
             // Atualiza o localStorage com dados sem duplicatas
             if (uniqueParsed.length > 0) {
@@ -176,6 +195,24 @@ export function useTransactions() {
           });
           // Remove duplicatas baseado no ID antes de definir usando a função auxiliar
           const uniqueData = removeDuplicates(formattedData);
+          
+          // Debug: Verificar transações de entrada carregadas do Supabase
+          const incomeFromSupabase = uniqueData.filter(t => t.type === 'income');
+          const totalIncomeFromSupabase = incomeFromSupabase.reduce((sum, t) => sum + (t.amount || 0), 0);
+          
+          console.log('📊 Transações carregadas do Supabase:', {
+            total: formattedData.length,
+            unicas: uniqueData.length,
+            duplicatasRemovidas: formattedData.length - uniqueData.length,
+            entradas: incomeFromSupabase.length,
+            totalEntradas: totalIncomeFromSupabase,
+            detalhesEntradas: incomeFromSupabase.map(t => ({
+              id: t.id,
+              description: t.description,
+              amount: t.amount,
+              date: t.date
+            }))
+          });
           
           setTransactions(uniqueData);
           // Sincroniza com localStorage como backup

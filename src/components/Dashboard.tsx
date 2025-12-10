@@ -65,14 +65,40 @@ const Dashboard = () => {
   };
 
   // Remove duplicatas de forma mais robusta usando Map
+  // Remove por ID primeiro, depois por combinação de campos (descrição + valor + data)
   const removeDuplicates = (transactions: Transaction[]): Transaction[] => {
-    const seen = new Map<string, Transaction>();
+    // Primeiro remove por ID
+    const seenById = new Map<string, Transaction>();
     for (const transaction of transactions) {
-      if (!seen.has(transaction.id)) {
-        seen.set(transaction.id, transaction);
+      if (!seenById.has(transaction.id)) {
+        seenById.set(transaction.id, transaction);
       }
     }
-    return Array.from(seen.values());
+    
+    // Depois remove por combinação de campos (mesma descrição, valor e data)
+    const seenByKey = new Map<string, Transaction>();
+    const uniqueTransactions: Transaction[] = [];
+    
+    for (const transaction of Array.from(seenById.values())) {
+      // Cria uma chave única baseada em descrição, valor e data
+      const key = `${transaction.description.trim().toLowerCase()}-${transaction.amount}-${transaction.date}`;
+      if (!seenByKey.has(key)) {
+        seenByKey.set(key, transaction);
+        uniqueTransactions.push(transaction);
+      } else {
+        // Se já existe, mantém o que tem o ID mais recente (assumindo que IDs mais novos são maiores)
+        const existing = seenByKey.get(key)!;
+        if (transaction.id > existing.id) {
+          const index = uniqueTransactions.findIndex(t => t.id === existing.id);
+          if (index !== -1) {
+            uniqueTransactions[index] = transaction;
+            seenByKey.set(key, transaction);
+          }
+        }
+      }
+    }
+    
+    return uniqueTransactions;
   };
 
   // Filtra transações baseado no filtro selecionado
@@ -97,28 +123,102 @@ const Dashboard = () => {
     const totalIncome = incomeTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
     const totalExpenses = expenseTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
     
-    console.log('🔍 Debug Dashboard - Cálculo Detalhado (usando amount direto da tabela):', {
-      totalTransactions: transactions.length,
-      uniqueTransactions: uniqueTransactions.length,
-      filteredTransactions: filtered.length,
-      incomeTransactions: incomeTransactions.length,
-      expenseTransactions: expenseTransactions.length,
-      totalIncome: totalIncome,
-      totalExpenses: totalExpenses,
-      incomeDetails: incomeTransactions.map(t => ({
-        id: t.id,
-        description: t.description,
-        amount: t.amount, // Valor direto da coluna amount
-        date: t.date,
-        type: t.type
-      })),
-      allTransactionIds: filtered.map(t => t.id),
-      duplicateCheck: {
-        totalIds: transactions.length,
-        uniqueIds: new Set(transactions.map(t => t.id)).size,
-        hasDuplicates: transactions.length !== new Set(transactions.map(t => t.id)).size
+    // Verificação detalhada de duplicatas
+    const incomeIds = incomeTransactions.map(t => t.id);
+    const duplicateIds = incomeIds.filter((id, index) => incomeIds.indexOf(id) !== index);
+    const uniqueIncomeIds = new Set(incomeIds);
+    
+    // Verificação de duplicatas por combinação de campos (mesma descrição, valor e data)
+    const incomeByKey = new Map<string, typeof incomeTransactions[0]>();
+    const duplicateKeys: string[] = [];
+    incomeTransactions.forEach(t => {
+      const key = `${t.description}-${t.amount}-${t.date}`;
+      if (incomeByKey.has(key)) {
+        duplicateKeys.push(key);
+      } else {
+        incomeByKey.set(key, t);
       }
     });
+    
+    // Soma manual para verificação
+    let manualSum = 0;
+    incomeTransactions.forEach(t => {
+      manualSum += t.amount || 0;
+    });
+    
+    console.log('🔍🔍🔍 DEBUG COMPLETO - Entradas:', {
+      'Total de transações carregadas': transactions.length,
+      'Transações únicas (por ID)': uniqueTransactions.length,
+      'Transações filtradas': filtered.length,
+      'Transações de ENTRADA': incomeTransactions.length,
+      'Total calculado (reduce)': totalIncome,
+      'Total calculado (manual)': manualSum,
+      'Diferença': Math.abs(totalIncome - manualSum),
+      'IDs duplicados encontrados': duplicateIds,
+      'Chaves duplicadas (desc-valor-data)': duplicateKeys,
+      'Quantidade de IDs únicos': uniqueIncomeIds.size,
+      'Filtro ativo': filterType,
+      'Ano selecionado': selectedYear,
+      'Mês selecionado': selectedMonth,
+      'DETALHES DE CADA TRANSAÇÃO DE ENTRADA': incomeTransactions.map((t, index) => ({
+        '#': index + 1,
+        id: t.id,
+        description: t.description,
+        amount: t.amount,
+        date: t.date,
+        type: t.type,
+        category: t.category
+      })),
+      'SOMA INDIVIDUAL DE CADA VALOR': incomeTransactions.map(t => t.amount),
+      'VERIFICAÇÃO DE DUPLICATAS POR ID': {
+        total: incomeIds.length,
+        unicos: uniqueIncomeIds.size,
+        duplicados: incomeIds.length - uniqueIncomeIds.size,
+        idsComDuplicatas: duplicateIds
+      }
+    });
+    
+    // Alerta se houver discrepância
+    if (Math.abs(totalIncome - manualSum) > 0.01) {
+      console.error('❌ ERRO: Diferença entre cálculos detectada!', {
+        reduce: totalIncome,
+        manual: manualSum,
+        diferenca: Math.abs(totalIncome - manualSum)
+      });
+    }
+    
+    // Alerta se houver duplicatas
+    if (duplicateIds.length > 0 || duplicateKeys.length > 0) {
+      console.warn('⚠️ ATENÇÃO: Duplicatas detectadas!', {
+        idsDuplicados: duplicateIds,
+        chavesDuplicadas: duplicateKeys
+      });
+    }
+    
+    // Verificação do filtro de data
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
+    
+    if (filterType === 'all') {
+      console.log('📅 Filtro: TODAS as transações (sem filtro de data)');
+    } else if (filterType === 'currentMonth') {
+      const transactionsOutsideMonth = incomeTransactions.filter(t => {
+        const [year, month] = t.date.split('-').map(Number);
+        return year !== currentYear || month !== currentMonth;
+      });
+      if (transactionsOutsideMonth.length > 0) {
+        console.warn('⚠️ Transações fora do mês atual detectadas:', transactionsOutsideMonth);
+      }
+    } else if (filterType === 'month') {
+      const transactionsOutsidePeriod = incomeTransactions.filter(t => {
+        const [year, month] = t.date.split('-').map(Number);
+        return year !== selectedYear || month !== selectedMonth;
+      });
+      if (transactionsOutsidePeriod.length > 0) {
+        console.warn('⚠️ Transações fora do período selecionado detectadas:', transactionsOutsidePeriod);
+      }
+    }
     
     return filtered;
   }, [transactions, filterType, selectedYear, selectedMonth]);
