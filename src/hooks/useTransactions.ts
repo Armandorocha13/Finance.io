@@ -149,14 +149,19 @@ export function useTransactions() {
           const formattedData: Transaction[] = (data || []).map((item: any) => {
             let dateStr = item.date;
             // Se a data vier como objeto Date ou string com timezone, converte para YYYY-MM-DD
-            if (dateStr instanceof Date) {
-              const year = dateStr.getFullYear();
-              const month = String(dateStr.getMonth() + 1).padStart(2, '0');
-              const day = String(dateStr.getDate()).padStart(2, '0');
+            if (dateStr && typeof dateStr === 'object' && 'getFullYear' in dateStr) {
+              // É um objeto Date
+              const dateObj = dateStr as unknown as Date;
+              const year = dateObj.getFullYear();
+              const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+              const day = String(dateObj.getDate()).padStart(2, '0');
               dateStr = `${year}-${month}-${day}`;
             } else if (typeof dateStr === 'string' && dateStr.includes('T')) {
               // Remove hora e timezone, mantém apenas a data
               dateStr = dateStr.split('T')[0];
+            } else if (typeof dateStr !== 'string') {
+              // Se não for string nem Date, converte para string
+              dateStr = String(dateStr);
             }
             return {
               id: item.id,
@@ -234,14 +239,19 @@ export function useTransactions() {
                 }
                 
                 // Formata a transação antes de adicionar
-                let dateStr = newTransaction.date;
-                if (dateStr instanceof Date) {
-                  const year = dateStr.getFullYear();
-                  const month = String(dateStr.getMonth() + 1).padStart(2, '0');
-                  const day = String(dateStr.getDate()).padStart(2, '0');
+                let dateStr: string = newTransaction.date as string;
+                if (dateStr && typeof dateStr === 'object' && 'getFullYear' in dateStr) {
+                  // É um objeto Date
+                  const dateObj = dateStr as unknown as Date;
+                  const year = dateObj.getFullYear();
+                  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                  const day = String(dateObj.getDate()).padStart(2, '0');
                   dateStr = `${year}-${month}-${day}`;
                 } else if (typeof dateStr === 'string' && dateStr.includes('T')) {
                   dateStr = dateStr.split('T')[0];
+                } else if (typeof dateStr !== 'string') {
+                  // Se não for string nem Date, converte para string
+                  dateStr = String(dateStr);
                 }
                 
                 const formattedTransaction: Transaction = {
@@ -272,14 +282,19 @@ export function useTransactions() {
                 const updatedTransaction = payload.new as any;
                 
                 // Formata a transação antes de atualizar
-                let dateStr = updatedTransaction.date;
-                if (dateStr instanceof Date) {
-                  const year = dateStr.getFullYear();
-                  const month = String(dateStr.getMonth() + 1).padStart(2, '0');
-                  const day = String(dateStr.getDate()).padStart(2, '0');
+                let dateStr: string = updatedTransaction.date as string;
+                if (dateStr && typeof dateStr === 'object' && 'getFullYear' in dateStr) {
+                  // É um objeto Date
+                  const dateObj = dateStr as unknown as Date;
+                  const year = dateObj.getFullYear();
+                  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                  const day = String(dateObj.getDate()).padStart(2, '0');
                   dateStr = `${year}-${month}-${day}`;
                 } else if (typeof dateStr === 'string' && dateStr.includes('T')) {
                   dateStr = dateStr.split('T')[0];
+                } else if (typeof dateStr !== 'string') {
+                  // Se não for string nem Date, converte para string
+                  dateStr = String(dateStr);
                 }
                 
                 const formattedTransaction: Transaction = {
@@ -386,14 +401,19 @@ export function useTransactions() {
       }
 
         // Sucesso no Supabase - formata os dados
-        let dateStr = data.date;
-        if (dateStr instanceof Date) {
-          const year = dateStr.getFullYear();
-          const month = String(dateStr.getMonth() + 1).padStart(2, '0');
-          const day = String(dateStr.getDate()).padStart(2, '0');
+        let dateStr: string = data.date as string;
+        if (dateStr && typeof dateStr === 'object' && 'getFullYear' in dateStr) {
+          // É um objeto Date
+          const dateObj = dateStr as unknown as Date;
+          const year = dateObj.getFullYear();
+          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+          const day = String(dateObj.getDate()).padStart(2, '0');
           dateStr = `${year}-${month}-${day}`;
         } else if (typeof dateStr === 'string' && dateStr.includes('T')) {
           dateStr = dateStr.split('T')[0];
+        } else if (typeof dateStr !== 'string') {
+          // Se não for string nem Date, converte para string
+          dateStr = String(dateStr);
         }
         
         const formattedTransaction: Transaction = {
