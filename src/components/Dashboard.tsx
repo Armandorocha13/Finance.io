@@ -169,7 +169,25 @@ const Dashboard = () => {
         type: t.type,
         category: t.category
       })),
-      'SOMA INDIVIDUAL DE CADA VALOR': incomeTransactions.map(t => t.amount),
+      'SOMA INDIVIDUAL DE CADA VALOR (EXPANDIDO)': incomeTransactions.map((t, idx) => ({
+        '#': idx + 1,
+        valor: t.amount,
+        descricao: t.description,
+        data: t.date,
+        id: t.id
+      })),
+      'SOMA PASSO A PASSO': (() => {
+        let soma = 0;
+        return incomeTransactions.map((t, idx) => {
+          soma += t.amount || 0;
+          return {
+            '#': idx + 1,
+            valor: t.amount,
+            somaAcumulada: soma,
+            descricao: t.description.substring(0, 30)
+          };
+        });
+      })(),
       'VERIFICAÇÃO DE DUPLICATAS POR ID': {
         total: incomeIds.length,
         unicos: uniqueIncomeIds.size,
@@ -195,13 +213,49 @@ const Dashboard = () => {
       });
     }
     
-    // Verificação do filtro de data
+    // Verificação do filtro de data e análise detalhada
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth() + 1;
     
+    // Agrupa transações por mês/ano para análise
+    const transactionsByMonth = incomeTransactions.reduce((acc, t) => {
+      const [year, month] = t.date.split('-').map(Number);
+      const key = `${year}-${String(month).padStart(2, '0')}`;
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(t);
+      return acc;
+    }, {} as Record<string, typeof incomeTransactions>);
+    
+    const totalsByMonth = Object.entries(transactionsByMonth).map(([monthKey, trans]) => ({
+      mes: monthKey,
+      quantidade: trans.length,
+      total: trans.reduce((sum, t) => sum + (t.amount || 0), 0),
+      transacoes: trans.map(t => ({
+        id: t.id,
+        descricao: t.description,
+        valor: t.amount,
+        data: t.date
+      }))
+    }));
+    
+    console.log('📊 ANÁLISE POR MÊS:', {
+      filtroAtivo: filterType,
+      anoSelecionado: selectedYear,
+      mesSelecionado: selectedMonth,
+      totalGeral: totalIncome,
+      esperado: 15045,
+      diferenca: totalIncome - 15045,
+      distribuicaoPorMes: totalsByMonth,
+      mesAtual: `${currentYear}-${String(currentMonth).padStart(2, '0')}`,
+      totalMesAtual: totalsByMonth.find(m => m.mes === `${currentYear}-${String(currentMonth).padStart(2, '0')}`)?.total || 0
+    });
+    
     if (filterType === 'all') {
       console.log('📅 Filtro: TODAS as transações (sem filtro de data)');
+      console.warn('⚠️ ATENÇÃO: O filtro está em "TODAS". Se você espera R$ 15.045,00, pode ser que precise filtrar por um mês específico.');
     } else if (filterType === 'currentMonth') {
       const transactionsOutsideMonth = incomeTransactions.filter(t => {
         const [year, month] = t.date.split('-').map(Number);
