@@ -168,6 +168,9 @@ function toast({ ...props }: Toast) {
   }
 }
 
+// Exporta a função toast diretamente
+export { toast }
+
 export function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 

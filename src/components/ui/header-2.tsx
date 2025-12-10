@@ -20,7 +20,18 @@ import { cn } from '@/lib/utils';
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon';
 import { useScroll } from '@/components/ui/use-scroll';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { DollarSign } from 'lucide-react';
+import { DollarSign, LogOut, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
+import { useNavigate } from 'react-router-dom';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 /**
  * Props do componente Header
@@ -42,6 +53,9 @@ export function Header({ activeTab, onTabChange }: HeaderProps) {
 	// Estados
 	const [open, setOpen] = React.useState(false); // Controla menu mobile aberto/fechado
 	const scrolled = useScroll(10); // Detecta se página foi rolada (threshold: 10px)
+	const { user, signOut } = useAuth(); // Hook de autenticação
+	const { profile } = useProfile(); // Hook de perfil
+	const navigate = useNavigate(); // Hook de navegação
 
 	/**
 	 * Links de navegação principais
@@ -126,6 +140,42 @@ export function Header({ activeTab, onTabChange }: HeaderProps) {
 						</button>
 					))}
 					<ThemeToggle />
+					{user && (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="ghost" size="icon" className="relative">
+									<User className="h-5 w-5" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end" className="w-56">
+								<DropdownMenuLabel>
+									<div className="flex flex-col space-y-1">
+										<p className="text-sm font-medium leading-none">
+											{profile?.full_name || 
+											 user.user_metadata?.full_name || 
+											 user.user_metadata?.name || 
+											 user.email?.split('@')[0] || 
+											 'Usuário'}
+										</p>
+										<p className="text-xs leading-none text-muted-foreground">
+											{user.email}
+										</p>
+									</div>
+								</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem
+									onClick={async () => {
+										await signOut();
+										navigate('/auth');
+									}}
+									className="text-red-600 focus:text-red-600"
+								>
+									<LogOut className="mr-2 h-4 w-4" />
+									<span>Sair</span>
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					)}
 				</div>
 				<div className="flex items-center gap-2 md:hidden">
 					<ThemeToggle />
@@ -167,6 +217,33 @@ export function Header({ activeTab, onTabChange }: HeaderProps) {
 								{link.label}
 							</button>
 						))}
+						{user && (
+							<>
+								<div className="my-2 border-t border-border"></div>
+								<div className="px-2 py-1.5 text-sm text-muted-foreground">
+									{profile?.full_name || 
+									 user.user_metadata?.full_name || 
+									 user.user_metadata?.name || 
+									 user.email}
+								</div>
+								<button
+									onClick={async () => {
+										await signOut();
+										navigate('/auth');
+										setOpen(false);
+									}}
+									className={cn(
+										buttonVariants({
+											variant: 'ghost',
+											className: 'justify-start text-red-600 focus:text-red-600',
+										})
+									)}
+								>
+									<LogOut className="mr-2 h-4 w-4" />
+									<span>Sair</span>
+								</button>
+							</>
+						)}
 					</div>
 				</div>
 			</div>

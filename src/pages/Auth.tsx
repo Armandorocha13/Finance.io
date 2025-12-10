@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { Eye, EyeOff, DollarSign } from 'lucide-react';
 
 const Auth = () => {
@@ -16,9 +16,15 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+
+  // Redireciona para home se já estiver autenticado
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,25 +34,35 @@ const Auth = () => {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast({
-              title: "Erro de Login",
-              description: "Email ou senha incorretos. Verifique suas credenciais.",
-              variant: "destructive",
-            });
+          console.error('Erro de login:', error);
+          
+          // Trata diferentes tipos de erro
+          let errorMessage = "Erro ao fazer login. Tente novamente.";
+          
+          if (error.message.includes('Invalid login credentials') || error.message.includes('Invalid credentials')) {
+            errorMessage = "Email ou senha incorretos. Verifique suas credenciais.";
+          } else if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
+            errorMessage = "Email não confirmado. Verifique sua caixa de entrada e confirme seu email antes de fazer login.";
+          } else if (error.message.includes('User not found')) {
+            errorMessage = "Usuário não encontrado. Verifique se o email está correto.";
           } else {
-            toast({
-              title: "Erro de Login",
-              description: error.message,
-              variant: "destructive",
-            });
+            errorMessage = error.message || errorMessage;
           }
+          
+          toast({
+            title: "Erro de Login",
+            description: errorMessage,
+            variant: "destructive",
+          });
         } else {
           toast({
             title: "Login realizado!",
             description: "Bem-vindo de volta ao Vaidoso FC!",
           });
-          navigate('/');
+          // Pequeno delay para garantir que a sessão seja atualizada
+          setTimeout(() => {
+            navigate('/');
+          }, 500);
         }
       } else {
         const { error } = await signUp(email, password, fullName);
@@ -67,10 +83,12 @@ const Auth = () => {
         } else {
           toast({
             title: "Cadastro realizado!",
-            description: "Conta criada com sucesso! Faça login para continuar.",
+            description: "Conta criada com sucesso! Redirecionando...",
           });
-          setIsLogin(true);
-          setPassword('');
+          // Aguarda um pouco para o perfil ser criado e então redireciona
+          setTimeout(() => {
+            navigate('/');
+          }, 1500);
         }
       }
     } catch (error) {
@@ -83,6 +101,23 @@ const Auth = () => {
 
     setLoading(false);
   };
+
+  // Exibe loading durante verificação de autenticação
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+          <p className="text-slate-300">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Se já está autenticado, não renderiza nada (será redirecionado)
+  if (user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0a0a0a] flex items-center justify-center p-6">

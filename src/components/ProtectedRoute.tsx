@@ -3,19 +3,18 @@
  * 
  * Componente de rota protegida
  * 
- * NOTA: Autenticação está desativada.
- * Este componente sempre renderiza os children sem verificação.
- * 
- * Quando autenticação for reativada, este componente deve:
- * - Verificar se usuário está autenticado
- * - Redirecionar para /auth se não estiver
- * - Exibir loading durante verificação
+ * Protege rotas que requerem autenticação:
+ * - Verifica se usuário está autenticado
+ * - Redireciona para /auth se não estiver
+ * - Exibe loading durante verificação
  * 
  * @author Vaidoso FC
- * @version 1.0.0
+ * @version 2.0.0
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * Props do componente ProtectedRoute
@@ -27,14 +26,40 @@ interface ProtectedRouteProps {
 /**
  * Componente de rota protegida
  * 
- * Atualmente sempre renderiza os children pois autenticação está desativada.
+ * Verifica autenticação e redireciona para /auth se necessário.
  * 
  * @param {ProtectedRouteProps} props - Props do componente
- * @returns {JSX.Element} Children renderizados
+ * @returns {JSX.Element} Children renderizados ou null (durante loading)
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  // TODO: Implementar verificação de autenticação quando reativada
-  // Autenticação desativada - sempre renderiza os children
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Se não está carregando e não há usuário, redireciona para login
+    if (!loading && !user) {
+      navigate('/auth', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  // Exibe loading durante verificação
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Se não há usuário, não renderiza nada (será redirecionado)
+  if (!user) {
+    return null;
+  }
+
+  // Usuário autenticado - renderiza children
   return <>{children}</>;
 };
 

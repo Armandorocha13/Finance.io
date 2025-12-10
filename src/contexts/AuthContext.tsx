@@ -3,42 +3,31 @@
  * 
  * Contexto de autenticação da aplicação Vaidoso FC
  * 
- * NOTA: Autenticação está desativada temporariamente.
- * Este contexto fornece um usuário mock para permitir
- * o funcionamento da aplicação sem necessidade de login.
- * 
- * Quando a autenticação for reativada, este arquivo deve
- * ser atualizado para usar o Supabase corretamente.
+ * Gerencia autenticação usando Supabase Auth:
+ * - Login e cadastro de usuários
+ * - Gerenciamento de sessão
+ * - Verificação de autenticação
+ * - Logout
  * 
  * @author Vaidoso FC
- * @version 1.0.0
+ * @version 2.0.0
  */
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-
-/**
- * Interface do usuário da aplicação
- */
-interface User {
-  id: string;
-  email: string;
-  user_metadata?: {
-    name?: string;
-  };
-}
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Tipo do contexto de autenticação
  * Define todas as propriedades e métodos disponíveis
  */
 interface AuthContextType {
-  user: User | null; // Usuário atual (mock quando autenticação desativada)
-  session: Session | null; // Sessão do Supabase (null quando desativada)
-  loading: boolean; // Estado de carregamento
+  user: User | null; // Usuário atual autenticado
+  session: Session | null; // Sessão do Supabase
+  loading: boolean; // Estado de carregamento inicial
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   isLoading: boolean; // Estado de carregamento adicional
 }
@@ -66,60 +55,163 @@ export const useAuth = () => {
 /**
  * Provider de autenticação
  * 
- * ATENÇÃO: Autenticação está DESATIVADA.
- * Retorna sempre um usuário mock para permitir o funcionamento
- * da aplicação sem necessidade de login real.
+ * Gerencia autenticação real usando Supabase Auth.
+ * Monitora mudanças de sessão e atualiza o estado automaticamente.
  * 
  * @param {React.ReactNode} children - Componentes filhos
  * @returns {JSX.Element} Provider de autenticação
  */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Usuário mock - usado quando autenticação está desativada
-  const mockUser: User = {
-    id: '1',
-    email: 'usuario@demo.com',
-    user_metadata: {
-      name: 'Usuário Demo',
-    },
-  };
-
-  // Estados do contexto (valores fixos quando autenticação está desativada)
-  const [user] = useState<User | null>(mockUser);
-  const [session] = useState<Session | null>(null);
-  const [loading] = useState(false);
-  const [isLoading] = useState(false);
+  const { toast } = useToast();
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   /**
-   * Função de cadastro (desativada)
+   * Carrega a sessão atual ao montar o componente
+   * e monitora mudanças de autenticação
+   */
+  useEffect(() => {
+    // Carrega sessão inicial
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Monitora mudanças de autenticação
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  /**
+   * Função de cadastro de novo usuário
    * 
    * @param {string} email - Email do usuário
    * @param {string} password - Senha do usuário
    * @param {string} fullName - Nome completo (opcional)
-   * @returns {Promise<{ error: null }>} Sempre retorna sem erro
+   * @returns {Promise<{ error: any }>} Retorna erro se houver, null se sucesso
    */
   const signUp = async (email: string, password: string, fullName?: string) => {
-    // TODO: Implementar quando autenticação for reativada
-    return { error: null };
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName || '',
+            name: fullName || '',
+          },
+        },
+      });
+
+      if (error) {
+        return { error };
+      }
+
+      // Atualiza estado local
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.user);
+      }
+
+      return { error: null };
+    } catch (error: any) {
+      return { error };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   /**
-   * Função de login (desativada)
+   * Função de login
    * 
    * @param {string} email - Email do usuário
    * @param {string} password - Senha do usuário
-   * @returns {Promise<void>} Promise vazia
+   * @returns {Promise<{ error: any }>} Retorna erro se houver, null se sucesso
    */
   const signIn = async (email: string, password: string) => {
-    // TODO: Implementar quando autenticação for reativada
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('Erro no signIn:', error);
+        return { error };
+      }
+
+      // Atualiza estado local
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.user);
+      } else {
+        // Se não há sessão, pode ser que o email não esteja confirmado
+        console.warn('Login realizado mas sem sessão. Verifique se o email foi confirmado.');
+        return { 
+          error: { 
+            message: 'Email não confirmado. Verifique sua caixa de entrada.' 
+          } 
+        };
+      }
+
+      return { error: null };
+    } catch (error: any) {
+      console.error('Exceção no signIn:', error);
+      return { error };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   /**
-   * Função de logout (desativada)
+   * Função de logout
    * 
-   * @returns {Promise<void>} Promise vazia
+   * @returns {Promise<void>} Promise que resolve quando logout é concluído
    */
   const signOut = async () => {
-    // TODO: Implementar quando autenticação for reativada
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        toast({
+          title: "Erro",
+          description: "Erro ao fazer logout. Tente novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Limpa estado local
+      setSession(null);
+      setUser(null);
+
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao fazer logout. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Valor do contexto
