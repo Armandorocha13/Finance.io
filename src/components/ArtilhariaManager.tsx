@@ -5,7 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useArtilharia, Jogador } from '@/hooks/useArtilharia';
-import { Plus, Edit, Trash2, Minus, Trophy } from 'lucide-react';
+import { Plus, Edit, Trash2, Minus, Trophy, Upload, Database } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { jogadoresData } from '@/utils/populateArtilharia';
+import { importArtilhariaToSupabase } from '@/utils/importArtilhariaToSupabase';
 import {
   Table,
   TableBody,
@@ -17,8 +21,11 @@ import {
 
 const ArtilhariaManager: React.FC = () => {
   const { jogadores, addJogador, updateJogador, deleteJogador, adicionarGol, removerGol } = useArtilharia();
+  const { toast } = useToast();
+  const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [editingJogador, setEditingJogador] = useState<Jogador | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
     gols: 0,
@@ -73,6 +80,91 @@ const ArtilhariaManager: React.FC = () => {
     setEditingJogador(null);
   };
 
+  const handleImportJogadores = () => {
+    if (window.confirm('Deseja importar todos os jogadores? Isso irá adicionar os jogadores à lista existente.')) {
+      const newJogadores = jogadoresData.map((data, index) => ({
+        id: `${Date.now()}-${index}`,
+        nome: data.jogador,
+        gols: data.gols,
+        posicao: undefined,
+      }));
+
+      const existing = localStorage.getItem('artilharia');
+      const existingJogadores = existing ? JSON.parse(existing) : [];
+      
+      // Verifica se já existem jogadores com os mesmos nomes
+      const existingNames = new Set(existingJogadores.map((j: Jogador) => j.nome.toLowerCase()));
+      const jogadoresToAdd = newJogadores.filter(j => !existingNames.has(j.nome.toLowerCase()));
+      
+      if (jogadoresToAdd.length === 0) {
+        toast({
+          title: "Nenhum jogador novo",
+          description: "Todos os jogadores já estão cadastrados.",
+          variant: "default",
+        });
+        return;
+      }
+
+      const allJogadores = [...existingJogadores, ...jogadoresToAdd];
+      localStorage.setItem('artilharia', JSON.stringify(allJogadores));
+      
+      toast({
+        title: "Jogadores importados!",
+        description: `${jogadoresToAdd.length} jogadores foram adicionados com sucesso.`,
+        variant: "default",
+      });
+      
+      // Recarrega a página para atualizar a lista
+      window.location.reload();
+    }
+  };
+
+  const handleImportToSupabase = async () => {
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Você precisa estar autenticado para importar para o banco de dados.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!window.confirm('Deseja importar todos os jogadores para o banco de dados Supabase? Isso irá adicionar os jogadores à tabela Artilharia.')) {
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const result = await importArtilhariaToSupabase(user.id);
+      
+      if (result.success) {
+        toast({
+          title: "Importação concluída!",
+          description: result.message,
+          variant: "default",
+        });
+        // Recarrega a página para atualizar a lista
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        toast({
+          title: "Erro na importação",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: `Erro ao importar: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -80,17 +172,36 @@ const ArtilhariaManager: React.FC = () => {
           <h2 className="text-2xl font-bold text-foreground">Artilharia</h2>
           <p className="text-muted-foreground">Gerencie os jogadores e seus gols</p>
         </div>
-        <Button
-          onClick={() => {
-            setShowForm(true);
-            setEditingJogador(null);
-            setFormData({ nome: '', gols: 0, posicao: '' });
-          }}
-          className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Adicionar Jogador
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleImportJogadores}
+            variant="outline"
+            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Importar (Local)
+          </Button>
+          <Button
+            onClick={handleImportToSupabase}
+            variant="outline"
+            disabled={isImporting || !user}
+            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+          >
+            <Database className="w-4 h-4 mr-2" />
+            {isImporting ? 'Importando...' : 'Importar (Banco)'}
+          </Button>
+          <Button
+            onClick={() => {
+              setShowForm(true);
+              setEditingJogador(null);
+              setFormData({ nome: '', gols: 0, posicao: '' });
+            }}
+            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Adicionar Jogador
+          </Button>
+        </div>
       </div>
 
       {showForm && (
