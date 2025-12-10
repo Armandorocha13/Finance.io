@@ -130,7 +130,7 @@ ${status}
 - Liquido: ${formatCurrency(balance)} ${balance >= 0 ? '🟢' : '🔴'}
 - Taxa de Economia: ${savingsRate}% ${Number(savingsRate) > 20 ? '🌟' : ''}
 
-📋 ANÁLISE DE Saidas POR CATEGORIA
+📋 ANÁLISE DE Saídas POR CATEGORIA
 ${sortedCategories.join('\n')}
 
 💸 MAIORES GASTOS
@@ -141,8 +141,8 @@ ${recommendations}
 🎯 METAS SUGERIDAS
 1. ${balance >= 0 
   ? `Manter o Liquido positivo e aumentar a taxa de economia para ${Math.min(Number(savingsRate) + 5, 30)}%`
-  : 'Reduzir Saidas para alcançar um Liquido positivo nos próximos meses'}
-2. Criar um fundo de emergência equivalente a 3-6 meses de Saidas
+  : 'Reduzir Saídas para alcançar um Liquido positivo nos próximos meses'}
+2. Criar um fundo de emergência equivalente a 3-6 meses de Saídas
 3. ${Number(savingsRate) < 20 
   ? 'Aumentar a taxa de economia para pelo menos 20%' 
   : 'Considerar investimentos para seu dinheiro guardado'}
@@ -162,7 +162,7 @@ function generateRecommendations(data: FinancialData): string {
   recommendations.push('📝 RECOMENDAÇÕES');
   
   if (balance < 0) {
-    recommendations.push('- ⚠️ Reduzir Saidas imediatamente para evitar endividamento');
+    recommendations.push('- ⚠️ Reduzir Saídas imediatamente para evitar endividamento');
   }
   
   if (Number(totalExpensesPercentage) > 80) {

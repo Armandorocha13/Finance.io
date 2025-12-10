@@ -32,7 +32,7 @@ export function calculateFinancialMetrics(transactions: Transaction[]): Financia
     new Date(t.date) >= firstDayOfMonth
   );
 
-  // Calcular Entradas e Saidas mensais
+  // Calcular Entradas e Saídas mensais
   const monthlyIncome = monthlyTransactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -46,7 +46,7 @@ export function calculateFinancialMetrics(transactions: Transaction[]): Financia
     ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100 
     : 0;
 
-  // Categorizar Saidas
+  // Categorizar Saídas
   const expenses = monthlyTransactions.filter(t => t.type === 'expense');
   const essentialExpenses = expenses
     .filter(t => ESSENTIAL_CATEGORIES.includes(t.category.toLowerCase()))
@@ -56,7 +56,7 @@ export function calculateFinancialMetrics(transactions: Transaction[]): Financia
     .filter(t => !ESSENTIAL_CATEGORIES.includes(t.category.toLowerCase()))
     .reduce((sum, t) => sum + t.amount, 0);
 
-  // Calcular fundo de emergência (considerando 6 meses de Saidas essenciais)
+  // Calcular fundo de emergência (considerando 6 meses de Saídas essenciais)
   const emergencyFundTarget = essentialExpenses * 6;
   const currentSavings = transactions
     .filter(t => t.type === 'income' && t.category.toLowerCase() === 'poupança')
@@ -112,7 +112,7 @@ export function getFinancialHealth(metrics: FinancialMetrics): {
   else if (metrics.emergencyFundRatio >= 25) score += 10;
 
   if (metrics.emergencyFundRatio < 100) {
-    recommendations.push('Continue construindo seu fundo de emergência até ter 6 meses de Saidas essenciais');
+    recommendations.push('Continue construindo seu fundo de emergência até ter 6 meses de Saídas essenciais');
   }
 
   // Avaliar proporção dívida/renda (peso: 20%)
@@ -123,7 +123,7 @@ export function getFinancialHealth(metrics: FinancialMetrics): {
     recommendations.push('Considere reduzir suas dívidas para melhorar sua saúde financeira');
   }
 
-  // Avaliar proporção Saidas essenciais/não essenciais (peso: 20%)
+  // Avaliar proporção Saídas essenciais/não essenciais (peso: 20%)
   const totalExpenses = metrics.expenseCategories.essential + metrics.expenseCategories.nonEssential;
   const essentialRatio = totalExpenses > 0 
     ? (metrics.expenseCategories.essential / totalExpenses) * 100 
@@ -133,7 +133,7 @@ export function getFinancialHealth(metrics: FinancialMetrics): {
   else if (essentialRatio <= 70) score += 10;
 
   if (essentialRatio > 60) {
-    recommendations.push('Tente reduzir a proporção de gastos com Saidas essenciais');
+    recommendations.push('Tente reduzir a proporção de gastos com Saídas essenciais');
   }
 
   // Determinar status baseado na pontuação

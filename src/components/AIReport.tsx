@@ -61,7 +61,7 @@ const AIReport: React.FC<AIReportProps> = ({ timeframe = 'month' }) => {
 
       console.log('Métricas calculadas:', { totalIncome, totalExpenses, balance });
 
-      // Categorizar Saidas
+      // Categorizar Saídas
       const expensesByCategory = filteredTransactions
         .filter(t => t.type === 'expense')
         .reduce((acc, t) => {
