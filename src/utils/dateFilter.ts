@@ -84,7 +84,17 @@ export function filterTransactionsByDate(
   }
 
   return transactions.filter((transaction) => {
-    const transactionDate = new Date(transaction.date);
+    // Parse da data da transação sem problemas de timezone
+    // Se a data está no formato YYYY-MM-DD, faz parse manual
+    let transactionDate: Date;
+    if (transaction.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = transaction.date.split('-').map(Number);
+      transactionDate = new Date(year, month - 1, day);
+      transactionDate.setHours(12, 0, 0, 0); // Usa meio-dia para evitar problemas de timezone
+    } else {
+      // Fallback para outros formatos
+      transactionDate = new Date(transaction.date + 'T12:00:00');
+    }
     return transactionDate >= startDate && transactionDate <= endDate;
   });
 }

@@ -27,8 +27,15 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
   const { toast } = useToast();  // Sistema de notificações
 
   // Formata a data para o padrão brasileiro (dd/mm/yyyy)
+  // Evita problemas de timezone tratando a data como string YYYY-MM-DD
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    // Se a data já está no formato YYYY-MM-DD, faz parse manual
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = dateString.split('-');
+      return `${day}/${month}/${year}`;
+    }
+    // Fallback para outros formatos
+    const date = new Date(dateString + 'T12:00:00'); // Usa meio-dia para evitar problemas de timezone
     return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',

@@ -29,7 +29,16 @@ const AIReport: React.FC<AIReportProps> = ({ timeframe = 'month' }) => {
       // Preparar os dados para análise
       const now = new Date();
       const filteredTransactions = transactions.filter(t => {
-        const transactionDate = new Date(t.date);
+        // Parse da data sem problemas de timezone
+        let transactionDate: Date;
+        if (t.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          const [year, month, day] = t.date.split('-').map(Number);
+          transactionDate = new Date(year, month - 1, day);
+          transactionDate.setHours(12, 0, 0, 0); // Usa meio-dia para evitar problemas de timezone
+        } else {
+          transactionDate = new Date(t.date + 'T12:00:00');
+        }
+        
         if (timeframe === 'week') {
           const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
           return transactionDate >= weekAgo;

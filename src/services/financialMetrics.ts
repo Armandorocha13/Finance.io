@@ -28,9 +28,18 @@ export function calculateFinancialMetrics(transactions: Transaction[]): Financia
   const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
   // Filtrar transações do mês atual
-  const monthlyTransactions = transactions.filter(t => 
-    new Date(t.date) >= firstDayOfMonth
-  );
+  // Parse da data sem problemas de timezone
+  const monthlyTransactions = transactions.filter(t => {
+    let transactionDate: Date;
+    if (t.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = t.date.split('-').map(Number);
+      transactionDate = new Date(year, month - 1, day);
+      transactionDate.setHours(12, 0, 0, 0); // Usa meio-dia para evitar problemas de timezone
+    } else {
+      transactionDate = new Date(t.date + 'T12:00:00');
+    }
+    return transactionDate >= firstDayOfMonth;
+  });
 
   // Calcular Entradas e Saídas mensais
   const monthlyIncome = monthlyTransactions

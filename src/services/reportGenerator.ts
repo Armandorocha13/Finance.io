@@ -40,7 +40,13 @@ function formatCurrency(value: number): string {
  */
 function formatDate(dateString: string): string {
   try {
-    const date = new Date(dateString);
+    // Se a data está no formato YYYY-MM-DD, faz parse manual para evitar problemas de timezone
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = dateString.split('-');
+      return `${day}/${month}/${year}`;
+    }
+    // Fallback para outros formatos
+    const date = new Date(dateString + 'T12:00:00'); // Usa meio-dia para evitar problemas de timezone
     return date.toLocaleDateString('pt-BR');
   } catch {
     return dateString;

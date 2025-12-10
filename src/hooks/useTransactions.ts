@@ -114,15 +114,29 @@ export function useTransactions() {
           }
         } else {
           // Converte os dados do Supabase para o formato Transaction
-          const formattedData: Transaction[] = (data || []).map((item: any) => ({
-            id: item.id,
-            description: item.description || '',
-            amount: item.amount,
-            type: item.type as 'income' | 'expense',
-            category: item.category,
-            date: item.date,
-            user_id: item.user_id,
-          }));
+          // Garante que a data está no formato YYYY-MM-DD
+          const formattedData: Transaction[] = (data || []).map((item: any) => {
+            let dateStr = item.date;
+            // Se a data vier como objeto Date ou string com timezone, converte para YYYY-MM-DD
+            if (dateStr instanceof Date) {
+              const year = dateStr.getFullYear();
+              const month = String(dateStr.getMonth() + 1).padStart(2, '0');
+              const day = String(dateStr.getDate()).padStart(2, '0');
+              dateStr = `${year}-${month}-${day}`;
+            } else if (typeof dateStr === 'string' && dateStr.includes('T')) {
+              // Remove hora e timezone, mantém apenas a data
+              dateStr = dateStr.split('T')[0];
+            }
+            return {
+              id: item.id,
+              description: item.description || '',
+              amount: item.amount,
+              type: item.type as 'income' | 'expense',
+              category: item.category,
+              date: dateStr,
+              user_id: item.user_id,
+            };
+          });
           setTransactions(formattedData);
           // Sincroniza com localStorage como backup
           if (formattedData.length > 0) {
@@ -210,6 +224,23 @@ export function useTransactions() {
 
     // Tenta salvar no Supabase (agora sempre tenta, mesmo com usuário mock)
     try {
+      // Garante que a data está no formato YYYY-MM-DD (sem timezone)
+      // Remove qualquer informação de hora/timezone que possa ter sido adicionada
+      let dateToSave = newTransaction.date;
+      if (dateToSave.includes('T')) {
+        // Se tiver hora, pega apenas a parte da data
+        dateToSave = dateToSave.split('T')[0];
+      }
+      // Garante formato YYYY-MM-DD
+      if (!dateToSave.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Se não estiver no formato correto, tenta converter
+        const date = new Date(dateToSave);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        dateToSave = `${year}-${month}-${day}`;
+      }
+
       const { data, error } = await supabase
         .from('transactions')
         .insert({
@@ -217,7 +248,7 @@ export function useTransactions() {
           amount: newTransaction.amount,
           type: newTransaction.type,
           category: newTransaction.category,
-          date: newTransaction.date,
+          date: dateToSave, // Usa a data formatada corretamente
           user_id: userId,
         })
         .select()
