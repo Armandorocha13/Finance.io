@@ -18,8 +18,8 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { TrendingUp, TrendingDown, DollarSign, PieChart, Plus, Tag, Wifi, WifiOff, Loader2, Brain } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, Pie, Legend } from 'recharts';
+import { TrendingUp, TrendingDown, DollarSign, PieChart as PieChartIcon, Plus, Tag, Wifi, WifiOff, Loader2, Brain } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -170,172 +170,130 @@ const Dashboard = () => {
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6">
               <Card className="bg-card/10 backdrop-blur-lg border-border">
                 <CardHeader>
                   <CardTitle className="text-lg sm:text-xl text-card-foreground">
                     Entradas vs Saídas
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="h-[300px] sm:h-[400px]">
+                <CardContent className="h-[350px] sm:h-[450px] p-6">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={(() => {
-                      // Agrupa transações filtradas por data e separa entradas e saídas
-                      const groupedByDate = filteredTransactions.reduce((acc, transaction) => {
-                        const date = transaction.date;
-                        if (!acc[date]) {
-                          acc[date] = { date, entradas: 0, saidas: 0 };
-                        }
-                        if (transaction.type === 'income') {
-                          acc[date].entradas += transaction.amount;
-                        } else {
-                          acc[date].saidas += transaction.amount;
-                        }
-                        return acc;
-                      }, {} as Record<string, { date: string; entradas: number; saidas: number }>);
-
-                      // Converte para array e ordena por data
-                      return Object.values(groupedByDate).sort((a, b) => 
-                        new Date(a.date).getTime() - new Date(b.date).getTime()
-                      );
-                    })()}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
-                      <XAxis 
-                        dataKey="date" 
-                        stroke="currentColor" 
-                        fontSize={12} 
-                        opacity={0.5}
-                        tickFormatter={(value) => {
-                          const date = new Date(value);
-                          return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-                        }}
-                      />
-                      <YAxis stroke="currentColor" fontSize={12} opacity={0.5} />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'var(--background)', 
-                          border: '1px solid var(--border)',
-                          borderRadius: '8px',
-                          color: 'var(--foreground)',
-                          fontSize: '12px'
-                        }}
-                        formatter={(value: number, name: string) => [
-                          new Intl.NumberFormat('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL'
-                          }).format(value),
-                          name
-                        ]}
-                        labelFormatter={(label) => {
-                          const date = new Date(label);
-                          return date.toLocaleDateString('pt-BR', { 
-                            day: '2-digit', 
-                            month: '2-digit', 
-                            year: 'numeric' 
-                          });
-                        }}
-                      />
-                      <Legend />
-                      <Line 
-                        type="monotone" 
-                        dataKey="entradas" 
-                        stroke="#10B981" 
-                        strokeWidth={3}
-                        name="Entradas"
-                        dot={{ fill: '#10B981', r: 4 }}
-                        activeDot={{ r: 6 }}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="saidas" 
-                        stroke="#EF4444" 
-                        strokeWidth={3}
-                        name="Saídas"
-                        dot={{ fill: '#EF4444', r: 4 }}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card/10 backdrop-blur-lg border-border">
-                <CardHeader>
-                  <CardTitle className="text-lg sm:text-xl text-card-foreground">
-                    Distribuição de Gastos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="h-[300px] sm:h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsPieChart>
+                    <PieChart>
                       <Pie
-                        data={filteredTransactions
-                          .filter(t => t.type === 'expense')
-                          .reduce((acc, t) => {
-                            const existing = acc.find(item => item.category === t.category);
-                            if (existing) {
-                              existing.value += t.amount;
+                        data={(() => {
+                          // Calcula totais de entradas e saídas
+                          const totals = filteredTransactions.reduce((acc, transaction) => {
+                            if (transaction.type === 'income') {
+                              acc.entradas += transaction.amount;
                             } else {
-                              acc.push({ 
-                                category: t.category, 
-                                value: t.amount,
-                                formattedValue: new Intl.NumberFormat('pt-BR', {
-                                  style: 'currency',
-                                  currency: 'BRL'
-                                }).format(t.amount)
-                              });
+                              acc.saidas += transaction.amount;
                             }
                             return acc;
-                          }, [] as { category: string; value: number; formattedValue: string }[])}
-                        dataKey="value"
-                        nameKey="category"
+                          }, { entradas: 0, saidas: 0 });
+
+                          // Retorna dados formatados para o gráfico de pizza
+                          return [
+                            {
+                              name: 'Entradas',
+                              value: totals.entradas,
+                              color: '#10B981',
+                              fill: '#10B981',
+                            },
+                            {
+                              name: 'Saídas',
+                              value: totals.saidas,
+                              color: '#EF4444',
+                              fill: '#EF4444',
+                            },
+                          ].filter(item => item.value > 0); // Remove itens com valor zero
+                        })()}
                         cx="50%"
                         cy="50%"
-                        outerRadius={80}
-                        fill="#10B981"
-                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(1)}%)`}
-                        animationDuration={1000}
-                        animationBegin={0}
+                        labelLine={false}
+                        label={({ name, percent, value }) => {
+                          if (percent < 0.05) return ''; // Não mostra label se for muito pequeno
+                          return `${name}: ${(percent * 100).toFixed(1)}%`;
+                        }}
+                        outerRadius={120}
+                        innerRadius={60}
+                        paddingAngle={5}
+                        dataKey="value"
+                        animationDuration={800}
+                        animationEasing="ease-out"
                       >
-                        {filteredTransactions
-                          .filter(t => t.type === 'expense')
-                          .map((entry, index) => (
-                            <Cell 
-                              key={`cell-${index}`} 
-                              fill={[
-                                '#10B981', // Verde
-                                '#3B82F6', // Azul
-                                '#F59E0B', // Laranja
-                                '#EF4444', // Vermelho
-                                '#8B5CF6', // Roxo
-                                '#EC4899', // Rosa
-                                '#14B8A6', // Turquesa
-                                '#F97316', // Laranja escuro
-                              ][index % 8]} 
-                            />
-                          ))}
+                        {(() => {
+                          const data = filteredTransactions.reduce((acc, transaction) => {
+                            if (transaction.type === 'income') {
+                              acc.entradas += transaction.amount;
+                            } else {
+                              acc.saidas += transaction.amount;
+                            }
+                            return acc;
+                          }, { entradas: 0, saidas: 0 });
+
+                          const pieData = [
+                            { name: 'Entradas', value: data.entradas, color: '#10B981' },
+                            { name: 'Saídas', value: data.saidas, color: '#EF4444' },
+                          ].filter(item => item.value > 0);
+
+                          return pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ));
+                        })()}
                       </Pie>
-                      <Tooltip 
-                        formatter={(value: number) => new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL'
-                        }).format(value)}
-                        contentStyle={{
-                          backgroundColor: 'var(--background)',
-                          border: '1px solid var(--border)',
-                          borderRadius: '8px',
-                          color: 'var(--foreground)',
-                          fontSize: '12px'
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0];
+                            const total = (data.payload as any).value;
+                            const percent = ((data.payload as any).percent * 100).toFixed(1);
+                            
+                            return (
+                              <div className="bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg p-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: data.color }}
+                                  />
+                                  <span className="text-sm font-semibold text-foreground">
+                                    {data.name}
+                                  </span>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between gap-4">
+                                    <span className="text-sm text-muted-foreground">Valor:</span>
+                                    <span className="text-sm font-semibold text-foreground">
+                                      {new Intl.NumberFormat('pt-BR', {
+                                        style: 'currency',
+                                        currency: 'BRL',
+                                      }).format(total)}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between gap-4">
+                                    <span className="text-sm text-muted-foreground">Percentual:</span>
+                                    <span className="text-sm font-semibold text-foreground">
+                                      {percent}%
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
                         }}
                       />
-                      <Legend 
-                        verticalAlign="bottom" 
+                      <Legend
+                        verticalAlign="bottom"
                         height={36}
-                        formatter={(value) => (
-                          <span className="text-sm text-foreground/80">{value}</span>
-                        )}
+                        iconType="circle"
+                        formatter={(value) => {
+                          if (value === 'Entradas') return <span className="text-sm">💰 Entradas</span>;
+                          if (value === 'Saídas') return <span className="text-sm">💸 Saídas</span>;
+                          return value;
+                        }}
                       />
-                    </RechartsPieChart>
+                    </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>

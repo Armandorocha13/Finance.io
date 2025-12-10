@@ -142,66 +142,72 @@ export function generateFinancialReport(data: FinancialData): string {
                        savingsRateNumber >= 20 ? '✅ Bom' : 
                        savingsRateNumber >= 10 ? '💡 Regular' : '⚠️ Atenção';
 
-  // Template do relatório no formato markdown
-  const report = `# 💰 Relatório Financeiro ${capitalizedMonth}
+  // Determinar status para taxa de economia
+  const savingsStatus = savingsRateNumber >= 20 ? 'Positivo 🟢' : 
+                       savingsRateNumber >= 10 ? 'Regular 🟡' : 'Atenção 🔴';
 
-| Indicador | Valor | Status |
-| :--- | :--- | :--- |
-| **Total de Entradas** | ${formatCurrency(totalIncome)} | |
-| **Total de Saídas** | ${formatCurrency(totalExpenses)} | |
-| **Saldo Líquido (${periodName})** | ${formatCurrency(balance)} | **${statusText} ${statusEmoji}** |
-| **Acumulado Total (Dados Fornecidos)** | **${formatCurrency(accumulatedTotal)}** | |
-| Taxa de Economia | ${savingsRate}% | ${savingsEmoji} |
+  // Template do relatório no formato solicitado
+  const report = `💰 Relatório Financeiro ${capitalizedMonth}💰
 
----
+**Total de Entradas**
+Valor: ${formatCurrency(totalIncome)}
+Status:
 
-${sortedCategories.length > 0 ? (sortedCategories.length === 1 ? `## 💸 Detalhe da Única Saída
+**Total de Saídas**
+Valor: ${formatCurrency(totalExpenses)}
+Status:
 
-* **Categoria:** ${sortedCategories[0].category}
-* **Valor Gasto:** ${formatCurrency(sortedCategories[0].amount)} (Representa 100% das saídas)
+**Saldo Líquido (${capitalizedMonth})**
+Valor: ${formatCurrency(balance)}
+Status: ${statusText} ${statusEmoji}
 
-` : `## 💸 Detalhe das Saídas
+**Acumulado Total**
+ Valor: ${formatCurrency(accumulatedTotal)}
+Status: ${statusText} ${statusEmoji}
 
-${sortedCategories.map(cat => 
-  `* **Categoria:** ${cat.category}\n* **Valor Gasto:** ${formatCurrency(cat.amount)} (Representa ${cat.percentage.toFixed(1)}% das saídas)`
-).join('\n\n')}
-
-`) : formattedTopExpenses.length > 0 && totalExpenses > 0 ? `## 💸 Detalhe da Única Saída
-
-* **Categoria:** ${formattedTopExpenses[0].category}
-* **Valor Gasto:** ${formatCurrency(formattedTopExpenses[0].amount)} (Representa 100% das saídas)
-
-` : totalExpenses === 0 ? `## 💸 Detalhe das Saídas
-
-Nenhuma saída registrada no período.
-
-` : ''}
-
-${formattedTopExpenses.length > 0 && sortedCategories.length === 0 ? `## 💸 Maiores Gastos
-
-${formattedTopExpenses.map(exp => 
-  `* **${exp.description}**\n  * Categoria: ${exp.category}\n  * Valor: ${formatCurrency(exp.amount)}\n  * Data: ${exp.date}`
-).join('\n\n')}
-
-` : ''}
-
-## ✅ Status
-
-* **Status Financeiro:** ${statusText} ${statusEmoji}
-
-${recommendations.length > 0 ? `---
-
-${recommendations}
-
-` : ''}
-
-${goals.length > 0 ? `---
-
-${goals}
-
-` : ''}
+**Taxa de Economia**
+Valor: ${savingsRate}%
+Status: ${savingsStatus}
 
 ---
+
+💸 **Detalhe da Saída** 💸
+
+${(() => {
+  if (sortedCategories.length > 0) {
+    if (sortedCategories.length === 1) {
+      return `**Categoria:** ${sortedCategories[0].category}
+
+**Valor Gasto:** ${formatCurrency(sortedCategories[0].amount)} (Representa 100% das saídas)
+
+`;
+    } else {
+      return sortedCategories.map(cat => 
+        `**Categoria:** ${cat.category}
+
+**Valor Gasto:** ${formatCurrency(cat.amount)} (Representa ${cat.percentage.toFixed(1)}% das saídas)
+
+`
+      ).join('\n');
+    }
+  } else if (formattedTopExpenses.length > 0 && totalExpenses > 0) {
+    return `**Categoria:** ${formattedTopExpenses[0].category}
+
+**Valor Gasto:** ${formatCurrency(formattedTopExpenses[0].amount)} (Representa 100% das saídas)
+
+`;
+  } else if (totalExpenses === 0) {
+    return `Nenhuma saída registrada no período.
+
+`;
+  }
+  return '';
+})()}
+
+✅ **Status**
+
+**Status Financeiro:** ${statusText} ${statusEmoji}
+
 
 💡 **Dica do Mês:** ${tip}
 `;
