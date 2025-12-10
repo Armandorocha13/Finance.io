@@ -184,15 +184,18 @@ export function useToast() {
     }
   }, [state])
 
+  const toastFn = (props: Toast) => {
+    return toast(props);
+  };
+
+  toastFn.success = (message: string) => toast({ variant: 'default', title: 'Sucesso', description: message });
+  toastFn.error = (message: string) => toast({ variant: 'destructive', title: 'Erro', description: message });
+  toastFn.warning = (message: string) => toast({ variant: 'default', title: 'Atenção', description: message });
+  toastFn.info = (message: string) => toast({ variant: 'default', title: 'Informação', description: message });
+
   return {
     ...state,
-    toast: {
-      ...toast,
-      success: (message: string) => toast({ variant: 'default', title: 'Sucesso', description: message }),
-      error: (message: string) => toast({ variant: 'destructive', title: 'Erro', description: message }),
-      warning: (message: string) => toast({ variant: 'default', title: 'Atenção', description: message }),
-      info: (message: string) => toast({ variant: 'default', title: 'Informação', description: message }),
-    },
+    toast: toastFn,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
   }
 }

@@ -30,7 +30,7 @@ src/
 │
 ├── services/          # Serviços e lógica de negócio
 │   ├── financialMetrics.ts
-│   └── deepseek.ts
+│   └── gemini.ts
 │
 ├── integrations/      # Integrações externas
 │   └── supabase/     # Cliente Supabase

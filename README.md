@@ -55,7 +55,7 @@ Finance io é uma aplicação web moderna para gerenciamento financeiro pessoal,
 - Real-time updates
 
 ### Inteligência Artificial
-- DeepSeek (análise de dados)
+- Google Gemini (análise de dados)
 - Processamento de linguagem natural
 
 ## Estrutura do Projeto 📁
@@ -120,7 +120,7 @@ npm install
 \`\`\`env
 VITE_SUPABASE_URL=sua_url
 VITE_SUPABASE_ANON_KEY=sua_chave
-VITE_DEEPSEEK_API_KEY=sua_chave_api
+VITE_GEMINI_API_KEY=sua_chave_api
 \`\`\`
 
 4. Inicie o servidor de desenvolvimento:

@@ -109,17 +109,16 @@ export const supabase = createClient(
 );
 ```
 
-#### DeepSeek (IA)
+#### Google Gemini (IA)
 ```typescript
-// src/services/deepseek.ts
-export const generateAIReport = async (data: TransactionData) => {
-  const response = await fetch('API_ENDPOINT', {
+// src/services/gemini.ts
+export const generateAIReport = async (prompt: string, fallbackData?: FinancialData) => {
+  const response = await fetch('/api/gemini/chat', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${process.env.VITE_DEEPSEEK_API_KEY}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(data)
+    body: JSON.stringify({ prompt })
   });
   return response.json();
 };
@@ -230,7 +229,7 @@ self.addEventListener('activate', (event) => {...});
 ### 3. Relatórios IA
 1. Usuário solicita relatório
 2. Dados são coletados
-3. Requisição é enviada à API DeepSeek
+3. Requisição é enviada à API Google Gemini
 4. Relatório é gerado e exibido
 
 ## Boas Práticas

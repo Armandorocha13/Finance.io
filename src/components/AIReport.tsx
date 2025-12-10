@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Brain, Loader2, Download } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { FileText, Download, RefreshCw } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import { useTransactions } from '@/hooks/useTransactions';
-import { generateAIReport } from '@/services/deepseek';
+import { generateFinancialReport, type FinancialData } from '@/services/reportGenerator';
 
 interface AIReportProps {
   timeframe?: 'week' | 'month' | 'year';
@@ -12,15 +12,13 @@ interface AIReportProps {
 
 const AIReport: React.FC<AIReportProps> = ({ timeframe = 'month' }) => {
   const { transactions } = useTransactions();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const generateReport = async () => {
+  const generateReport = () => {
     setLoading(true);
     setError(null);
-    console.log('Iniciando geração do relatório...');
 
     try {
       if (!transactions.length) {
@@ -42,70 +40,52 @@ const AIReport: React.FC<AIReportProps> = ({ timeframe = 'month' }) => {
         }
       });
 
-      console.log('Transações filtradas:', filteredTransactions);
-
       if (!filteredTransactions.length) {
         throw new Error(`Nenhuma transação encontrada para o período selecionado (${timeframe})`);
       }
 
       // Calcular métricas importantes
-      const totalIncome = filteredTransactions
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      const totalExpenses = filteredTransactions
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
-
+      const incomeTransactions = filteredTransactions.filter(t => t.type === 'income');
+      const expenseTransactions = filteredTransactions.filter(t => t.type === 'expense');
+      
+      const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
+      const totalExpenses = expenseTransactions.reduce((sum, t) => sum + t.amount, 0);
       const balance = totalIncome - totalExpenses;
 
-      console.log('Métricas calculadas:', { totalIncome, totalExpenses, balance });
-
       // Categorizar Saídas
-      const expensesByCategory = filteredTransactions
-        .filter(t => t.type === 'expense')
-        .reduce((acc, t) => {
-          acc[t.category] = (acc[t.category] || 0) + t.amount;
-          return acc;
-        }, {} as Record<string, number>);
+      const expensesByCategory = expenseTransactions.reduce((acc, t) => {
+        acc[t.category] = (acc[t.category] || 0) + t.amount;
+        return acc;
+      }, {} as Record<string, number>);
 
       // Encontrar maiores gastos
-      const topExpenses = filteredTransactions
-        .filter(t => t.type === 'expense')
+      const topExpenses = expenseTransactions
         .sort((a, b) => b.amount - a.amount)
-        .slice(0, 3);
+        .slice(0, 5)
+        .map(exp => ({
+          description: exp.description,
+          amount: exp.amount,
+          category: exp.category,
+          date: exp.date
+        }));
 
-      console.log('Dados preparados:', { expensesByCategory, topExpenses });
+      // Preparar dados para o relatório
+      const reportData: FinancialData = {
+        totalIncome,
+        totalExpenses,
+        balance,
+        expensesByCategory,
+        topExpenses,
+        timeframe: timeframe === 'week' ? 'semanal' : timeframe === 'month' ? 'mensal' : 'anual',
+        totalTransactions: filteredTransactions.length,
+        incomeTransactions: incomeTransactions.length,
+        expenseTransactions: expenseTransactions.length
+      };
 
-      // Gerar relatório usando DeepSeek
-      const prompt = `
-        Você é um consultor financeiro especializado em análise de dados financeiros pessoais.
-        Analise os seguintes dados financeiros do período (${timeframe}) e gere um relatório detalhado e personalizado em português.
-
-        DADOS FINANCEIROS:
-        - Entrada total: R$ ${totalIncome.toFixed(2)}
-        - Saídas totais: R$ ${totalExpenses.toFixed(2)}
-        - Liquido: R$ ${balance.toFixed(2)}
-        - Saídas por categoria: ${JSON.stringify(expensesByCategory, null, 2)}
-        - Maiores gastos: ${JSON.stringify(topExpenses, null, 2)}
-
-        INSTRUÇÕES:
-        1. Comece com uma visão geral da saúde financeira, usando emojis para melhor visualização
-        2. Faça uma análise detalhada dos gastos por categoria, identificando áreas de preocupação
-        3. Identifique padrões de gastos e comportamentos financeiros
-        4. Forneça recomendações personalizadas e práticas para economia
-        5. Sugira metas financeiras realistas baseadas nos dados
-        6. Use uma linguagem amigável e motivadora
-        7. Formate o texto de forma clara e organizada, usando emojis quando apropriado
-
-        IMPORTANTE: Mantenha o relatório conciso mas informativo, focando nas insights mais relevantes.
-      `;
-
-      console.log('Enviando prompt para a API...');
-      const aiResponse = await generateAIReport(prompt);
-      console.log('Resposta recebida da API');
+      // Gerar relatório pré-formatado
+      const generatedReport = generateFinancialReport(reportData);
       
-      setReport(aiResponse);
+      setReport(generatedReport);
       setError(null);
       
       toast({
@@ -114,7 +94,7 @@ const AIReport: React.FC<AIReportProps> = ({ timeframe = 'month' }) => {
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Erro inesperado ao gerar relatório";
-      console.error('Erro detalhado ao gerar relatório:', error);
+      console.error('Erro ao gerar relatório:', error);
       setError(errorMessage);
       setReport(null);
       
@@ -176,8 +156,8 @@ const AIReport: React.FC<AIReportProps> = ({ timeframe = 'month' }) => {
     <Card className="bg-white/10 backdrop-blur-lg border-white/20 text-white">
       <CardHeader>
         <CardTitle className="text-xl text-slate-200 flex items-center gap-2">
-          <Brain className="w-5 h-5 text-green-500" />
-          Relatório Inteligente
+          <FileText className="w-5 h-5 text-green-500" />
+          Relatório Financeiro
           <span className="text-sm font-normal text-slate-400">
             ({timeframe === 'week' ? 'Semanal' : timeframe === 'month' ? 'Mensal' : 'Anual'})
           </span>
@@ -199,19 +179,19 @@ const AIReport: React.FC<AIReportProps> = ({ timeframe = 'month' }) => {
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                   Gerando Relatório...
                 </>
               ) : (
                 <>
-                  <Brain className="w-4 h-4 mr-2" />
-                  Gerar Relatório com IA
+                  <FileText className="w-4 h-4 mr-2" />
+                  Gerar Relatório
                 </>
               )}
             </Button>
           ) : (
             <div className="space-y-4">
-              <div className="bg-white/5 rounded-lg p-4 text-sm text-slate-300 whitespace-pre-wrap">
+              <div className="bg-white/5 rounded-lg p-4 text-sm text-slate-300 whitespace-pre-wrap font-mono">
                 {report}
               </div>
               
@@ -224,12 +204,12 @@ const AIReport: React.FC<AIReportProps> = ({ timeframe = 'month' }) => {
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                       Atualizando...
                     </>
                   ) : (
                     <>
-                      <Brain className="w-4 h-4 mr-2" />
+                      <RefreshCw className="w-4 h-4 mr-2" />
                       Atualizar Relatório
                     </>
                   )}

@@ -8,13 +8,15 @@ const app = express();
 
 // Configuração do CORS mais específica
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:8080'],
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:8080', 'http://localhost:5173'],
   credentials: true
 }));
 app.use(express.json());
 
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
-  console.log('Origens permitidas:', process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:8080']);
+  console.log('Origens permitidas:', process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:8080', 'http://localhost:5173']);
+  console.log('Servidor backend pronto');
 }); 
