@@ -14,7 +14,7 @@
  * @version 1.0.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
@@ -31,6 +31,8 @@ import AIReport from './AIReport';
 import { Header } from '@/components/ui/header-2';
 import { useArtilharia } from '@/hooks/useArtilharia';
 import { Trophy } from 'lucide-react';
+import DateFilter, { FilterType } from './DateFilter';
+import { filterTransactionsByDate, getFilterDescription } from '@/utils/dateFilter';
 
 /**
  * Componente Dashboard
@@ -49,20 +51,41 @@ const Dashboard = () => {
   // Estados locais
   const [showForm, setShowForm] = useState(false); // Controla exibição do formulário de transação
   const [activeTab, setActiveTab] = useState('dashboard'); // Aba ativa no momento
+  
+  // Estados do filtro de data
+  const currentDate = new Date();
+  const [filterType, setFilterType] = useState<FilterType>('all');
+  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
+
+  // Filtra transações baseado no filtro selecionado
+  const filteredTransactions = useMemo(() => {
+    return filterTransactionsByDate(
+      transactions,
+      filterType,
+      filterType === 'month' ? selectedYear : undefined,
+      filterType === 'month' ? selectedMonth : undefined
+    );
+  }, [transactions, filterType, selectedYear, selectedMonth]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header activeTab={activeTab} onTabChange={setActiveTab} />
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            Olá, {user?.user_metadata?.name || 'Usuário'}
-          </h1>
-        </div>
-
         <Tabs value={activeTab} onValueChange={setActiveTab}>
 
           <TabsContent value="dashboard" className="space-y-4 sm:space-y-6">
+            {/* Filtro de Data */}
+            <DateFilter
+              filterType={filterType}
+              selectedYear={selectedYear}
+              selectedMonth={selectedMonth}
+              onFilterChange={setFilterType}
+              onYearChange={setSelectedYear}
+              onMonthChange={setSelectedMonth}
+            />
+
+            {/* Cards de Resumo */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="bg-card/10 backdrop-blur-lg border-border">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -73,11 +96,14 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-500">
-                    R$ {transactions
+                    R$ {filteredTransactions
                       .filter(t => t.type === 'income')
                       .reduce((sum, t) => sum + t.amount, 0)
                       .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {getFilterDescription(filterType, selectedYear, selectedMonth)}
+                  </p>
                 </CardContent>
               </Card>
 
@@ -90,11 +116,14 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-red-500">
-                    R$ {transactions
+                    R$ {filteredTransactions
                       .filter(t => t.type === 'expense')
                       .reduce((sum, t) => sum + t.amount, 0)
                       .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {getFilterDescription(filterType, selectedYear, selectedMonth)}
+                  </p>
                 </CardContent>
               </Card>
 
@@ -107,28 +136,36 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-blue-500">
-                    R$ {(transactions
+                    R$ {(filteredTransactions
                       .filter(t => t.type === 'income')
                       .reduce((sum, t) => sum + t.amount, 0) -
-                      transactions
+                      filteredTransactions
                         .filter(t => t.type === 'expense')
                         .reduce((sum, t) => sum + t.amount, 0))
                       .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {getFilterDescription(filterType, selectedYear, selectedMonth)}
+                  </p>
                 </CardContent>
               </Card>
 
               <Card className="bg-card/10 backdrop-blur-lg border-border">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-card-foreground/80">
-                    Transações
+                    Acumulado Total
                   </CardTitle>
-                  <PieChart className="h-4 w-4 text-purple-500" />
+                  <DollarSign className="h-4 w-4 text-purple-500" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-purple-500">
-                    {transactions.length}
+                    R$ {(filteredTransactions
+                      .reduce((sum, t) => sum + t.amount, 0))
+                      .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {getFilterDescription(filterType, selectedYear, selectedMonth)}
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -143,8 +180,8 @@ const Dashboard = () => {
                 <CardContent className="h-[300px] sm:h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={(() => {
-                      // Agrupa transações por data e separa entradas e saídas
-                      const groupedByDate = transactions.reduce((acc, transaction) => {
+                      // Agrupa transações filtradas por data e separa entradas e saídas
+                      const groupedByDate = filteredTransactions.reduce((acc, transaction) => {
                         const date = transaction.date;
                         if (!acc[date]) {
                           acc[date] = { date, entradas: 0, saidas: 0 };
@@ -232,7 +269,7 @@ const Dashboard = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <RechartsPieChart>
                       <Pie
-                        data={transactions
+                        data={filteredTransactions
                           .filter(t => t.type === 'expense')
                           .reduce((acc, t) => {
                             const existing = acc.find(item => item.category === t.category);
@@ -260,7 +297,7 @@ const Dashboard = () => {
                         animationDuration={1000}
                         animationBegin={0}
                       >
-                        {transactions
+                        {filteredTransactions
                           .filter(t => t.type === 'expense')
                           .map((entry, index) => (
                             <Cell 

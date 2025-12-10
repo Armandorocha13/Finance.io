@@ -179,7 +179,7 @@ const ArtilhariaManager: React.FC = () => {
             className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
           >
             <Upload className="w-4 h-4 mr-2" />
-            Importar (Local)
+            Carregar Arquivo
           </Button>
           <Button
             onClick={handleImportToSupabase}
@@ -188,7 +188,7 @@ const ArtilhariaManager: React.FC = () => {
             className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
           >
             <Database className="w-4 h-4 mr-2" />
-            {isImporting ? 'Importando...' : 'Importar (Banco)'}
+            {isImporting ? 'Importando...' : ' Salvar'}
           </Button>
           <Button
             onClick={() => {
