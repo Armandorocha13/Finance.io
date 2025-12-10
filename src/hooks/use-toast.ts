@@ -139,7 +139,7 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
-function toast({ ...props }: Toast) {
+function toastFunction({ ...props }: Toast) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -169,7 +169,18 @@ function toast({ ...props }: Toast) {
 }
 
 // Exporta a função toast diretamente
-export { toast }
+export const toast = toastFunction as typeof toastFunction & {
+  success: (message: string) => ReturnType<typeof toastFunction>;
+  error: (message: string) => ReturnType<typeof toastFunction>;
+  warning: (message: string) => ReturnType<typeof toastFunction>;
+  info: (message: string) => ReturnType<typeof toastFunction>;
+};
+
+// Adiciona métodos auxiliares
+toast.success = (message: string) => toastFunction({ variant: 'default', title: 'Sucesso', description: message });
+toast.error = (message: string) => toastFunction({ variant: 'destructive', title: 'Erro', description: message });
+toast.warning = (message: string) => toastFunction({ variant: 'default', title: 'Atenção', description: message });
+toast.info = (message: string) => toastFunction({ variant: 'default', title: 'Informação', description: message });
 
 export function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
@@ -184,18 +195,9 @@ export function useToast() {
     }
   }, [state])
 
-  const toastFn = (props: Toast) => {
-    return toast(props);
-  };
-
-  toastFn.success = (message: string) => toast({ variant: 'default', title: 'Sucesso', description: message });
-  toastFn.error = (message: string) => toast({ variant: 'destructive', title: 'Erro', description: message });
-  toastFn.warning = (message: string) => toast({ variant: 'default', title: 'Atenção', description: message });
-  toastFn.info = (message: string) => toast({ variant: 'default', title: 'Informação', description: message });
-
   return {
     ...state,
-    toast: toastFn,
+    toast: toast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
   }
 }
