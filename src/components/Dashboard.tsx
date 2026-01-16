@@ -110,7 +110,7 @@ const Dashboard = () => {
     const filtered = filterTransactionsByDate(
       uniqueTransactions,
       filterType,
-      filterType === 'month' ? selectedYear : undefined,
+      (filterType === 'month' || filterType === 'year') ? selectedYear : undefined,
       filterType === 'month' ? selectedMonth : undefined
     );
 
@@ -145,65 +145,6 @@ const Dashboard = () => {
     incomeTransactions.forEach(t => {
       manualSum += t.amount || 0;
     });
-
-    console.log('🔍🔍🔍 DEBUG COMPLETO - Entradas:', {
-      'Total de transações carregadas': transactions.length,
-      'Transações únicas (por ID)': uniqueTransactions.length,
-      'Transações filtradas': filtered.length,
-      'Transações de ENTRADA': incomeTransactions.length,
-      'Total calculado (reduce)': totalIncome,
-      'Total calculado (manual)': manualSum,
-      'Diferença': Math.abs(totalIncome - manualSum),
-      'IDs duplicados encontrados': duplicateIds,
-      'Chaves duplicadas (desc-valor-data)': duplicateKeys,
-      'Quantidade de IDs únicos': uniqueIncomeIds.size,
-      'Filtro ativo': filterType,
-      'Ano selecionado': selectedYear,
-      'Mês selecionado': selectedMonth,
-      'DETALHES DE CADA TRANSAÇÃO DE ENTRADA': incomeTransactions.map((t, index) => ({
-        '#': index + 1,
-        id: t.id,
-        description: t.description,
-        amount: t.amount,
-        date: t.date,
-        type: t.type,
-        category: t.category
-      })),
-      'SOMA INDIVIDUAL DE CADA VALOR (EXPANDIDO)': incomeTransactions.map((t, idx) => ({
-        '#': idx + 1,
-        valor: t.amount,
-        descricao: t.description,
-        data: t.date,
-        id: t.id
-      })),
-      'SOMA PASSO A PASSO': (() => {
-        let soma = 0;
-        return incomeTransactions.map((t, idx) => {
-          soma += t.amount || 0;
-          return {
-            '#': idx + 1,
-            valor: t.amount,
-            somaAcumulada: soma,
-            descricao: t.description.substring(0, 30)
-          };
-        });
-      })(),
-      'VERIFICAÇÃO DE DUPLICATAS POR ID': {
-        total: incomeIds.length,
-        unicos: uniqueIncomeIds.size,
-        duplicados: incomeIds.length - uniqueIncomeIds.size,
-        idsComDuplicatas: duplicateIds
-      }
-    });
-
-    // Alerta se houver discrepância
-    if (Math.abs(totalIncome - manualSum) > 0.01) {
-      console.error('❌ ERRO: Diferença entre cálculos detectada!', {
-        reduce: totalIncome,
-        manual: manualSum,
-        diferenca: Math.abs(totalIncome - manualSum)
-      });
-    }
 
     // Alerta se houver duplicatas
     if (duplicateIds.length > 0 || duplicateKeys.length > 0) {
@@ -293,6 +234,14 @@ const Dashboard = () => {
     return totalIncome - totalExpenses;
   }, [totalIncome, totalExpenses]);
 
+  // Calcula o acumulado total de toda a história (ignora o filtro de data)
+  const accumulatedBalance = useMemo(() => {
+    const unique = removeDuplicates(transactions);
+    const inc = unique.filter(t => t.type === 'income').reduce((sum, t) => sum + (t.amount || 0), 0);
+    const exp = unique.filter(t => t.type === 'expense').reduce((sum, t) => sum + (t.amount || 0), 0);
+    return inc - exp;
+  }, [transactions]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header activeTab={activeTab} onTabChange={setActiveTab} />
@@ -300,7 +249,7 @@ const Dashboard = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
 
           <TabsContent value="dashboard" className="space-y-4 sm:space-y-6">
-            {/* Filtro de Data */}
+            {/* Filtro de Data - Apenas para Dashboard */}
             <DateFilter
               filterType={filterType}
               selectedYear={selectedYear}
@@ -366,16 +315,16 @@ const Dashboard = () => {
               <Card className="bg-card/10 backdrop-blur-lg border-border">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-card-foreground/80">
-                    Acumulado Total
+                    Acumulado em caixa
                   </CardTitle>
                   <DollarSign className="h-4 w-4 text-purple-500" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-purple-500">
-                    R$ {totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    R$ {accumulatedBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Total de Entradas ({getFilterDescription(filterType, selectedYear, selectedMonth)})
+                    Saldo histórico (Todos os anos)
                   </p>
                 </CardContent>
               </Card>

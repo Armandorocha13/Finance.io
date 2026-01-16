@@ -178,19 +178,14 @@ export function useTransactions() {
           if (savedTransactions) {
             try {
               const parsed = JSON.parse(savedTransactions);
-              // Remove duplicatas do localStorage usando a função auxiliar
               const uniqueParsed = removeDuplicates(parsed);
               setTransactions(uniqueParsed);
-              // Atualiza o localStorage com dados sem duplicatas
-              if (uniqueParsed.length > 0) {
-                localStorage.setItem('transactions', JSON.stringify(uniqueParsed));
-              }
             } catch (error) {
               console.error('Erro ao parsear transações do localStorage:', error);
-              localStorage.removeItem('transactions');
             }
           }
         } else {
+          console.log(`✅ ${data?.length || 0} transações carregadas para o usuário: ${queryUserId}`);
           // Converte os dados do Supabase para o formato Transaction
           const formattedData: Transaction[] = (data || []).map(formatTransaction);
 
