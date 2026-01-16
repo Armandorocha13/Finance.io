@@ -129,45 +129,56 @@ const ArtilhariaManager = () => {
     }
   };
 
-  const handleImportToSupabase = async () => {
+  const handleSyncSupabase = async () => {
     if (!user) {
       toast({
         title: "Erro",
-        description: "Você precisa estar autenticado para importar para o banco de dados.",
+        description: "Você precisa estar autenticado para salvar no banco de dados.",
         variant: "destructive",
       });
       return;
     }
 
-    if (!window.confirm('Deseja importar todos os jogadores para o banco de dados Supabase? Isso irá adicionar os jogadores à tabela Artilharia.')) {
+    if (!window.confirm('Deseja salvar a lista atual de artilharia no banco de dados? Isso substituirá os dados salvos anteriormente.')) {
       return;
     }
 
     setIsImporting(true);
     try {
-      const result = await importArtilhariaToSupabase(user.id);
+      // 1. Primeiro remove os dados antigos para evitar duplicatas ou conflitos
+      const { error: deleteError } = await supabase
+        .from('artilharia')
+        .delete()
+        .eq('user_id', user.id);
 
-      if (result.success) {
-        toast({
-          title: "Importação concluída!",
-          description: result.message,
-          variant: "default",
-        });
-        // Recarrega a página para atualizar a lista
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } else {
-        toast({
-          title: "Erro na importação",
-          description: result.message,
-          variant: "destructive",
-        });
+      if (deleteError) throw deleteError;
+
+      // 2. Prepara os dados atuais (o que está na tela) para inserção
+      const dataToSave = jogadores.map(j => ({
+        nome: j.nome,
+        gols: j.gols,
+        posicao: j.posicao || null,
+        user_id: user.id
+      }));
+
+      if (dataToSave.length > 0) {
+        const { error: insertError } = await supabase
+          .from('artilharia')
+          .insert(dataToSave);
+
+        if (insertError) throw insertError;
       }
-    } catch (error: any) {
+
       toast({
-        title: "Erro",
-        description: `Erro ao importar: ${error.message}`,
+        title: "Dados salvos!",
+        description: "Sua lista de artilharia foi sincronizada com o banco de dados.",
+        variant: "default",
+      });
+    } catch (error: any) {
+      console.error('Erro ao sincronizar artilharia:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -236,7 +247,7 @@ const ArtilhariaManager = () => {
             <span className="truncate">Carregar</span>
           </Button>
           <Button
-            onClick={handleImportToSupabase}
+            onClick={handleSyncSupabase}
             variant="outline"
             disabled={isImporting || !user}
             className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white flex-1 sm:flex-none"
