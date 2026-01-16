@@ -47,11 +47,11 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { transactions, isLoading, addTransaction } = useTransactions();
   const { jogadores } = useArtilharia();
-  
+
   // Estados locais
   const [showForm, setShowForm] = useState(false); // Controla exibição do formulário de transação
   const [activeTab, setActiveTab] = useState('dashboard'); // Aba ativa no momento
-  
+
   // Estados do filtro de data
   const currentDate = new Date();
   const [filterType, setFilterType] = useState<FilterType>('all');
@@ -74,11 +74,11 @@ const Dashboard = () => {
         seenById.set(transaction.id, transaction);
       }
     }
-    
+
     // Depois remove por combinação de campos (mesma descrição, valor e data)
     const seenByKey = new Map<string, Transaction>();
     const uniqueTransactions: Transaction[] = [];
-    
+
     for (const transaction of Array.from(seenById.values())) {
       // Cria uma chave única baseada em descrição, valor e data
       const key = `${transaction.description.trim().toLowerCase()}-${transaction.amount}-${transaction.date}`;
@@ -97,7 +97,7 @@ const Dashboard = () => {
         }
       }
     }
-    
+
     return uniqueTransactions;
   };
 
@@ -106,28 +106,28 @@ const Dashboard = () => {
   const filteredTransactions = useMemo(() => {
     // Remove transações duplicadas (mesmo ID) usando Map para garantir unicidade
     const uniqueTransactions = removeDuplicates(transactions);
-    
+
     const filtered = filterTransactionsByDate(
       uniqueTransactions,
       filterType,
       filterType === 'month' ? selectedYear : undefined,
       filterType === 'month' ? selectedMonth : undefined
     );
-    
+
     // Debug: Log detalhado para verificar transações de entrada
     // Usa diretamente o campo amount da coluna transactions.amount
     const incomeTransactions = filtered.filter(t => t.type === 'income');
     const expenseTransactions = filtered.filter(t => t.type === 'expense');
-    
+
     // Soma diretamente os valores da coluna amount (já são números)
     const totalIncome = incomeTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
     const totalExpenses = expenseTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-    
+
     // Verificação detalhada de duplicatas
     const incomeIds = incomeTransactions.map(t => t.id);
     const duplicateIds = incomeIds.filter((id, index) => incomeIds.indexOf(id) !== index);
     const uniqueIncomeIds = new Set(incomeIds);
-    
+
     // Verificação de duplicatas por combinação de campos (mesma descrição, valor e data)
     const incomeByKey = new Map<string, typeof incomeTransactions[0]>();
     const duplicateKeys: string[] = [];
@@ -139,13 +139,13 @@ const Dashboard = () => {
         incomeByKey.set(key, t);
       }
     });
-    
+
     // Soma manual para verificação
     let manualSum = 0;
     incomeTransactions.forEach(t => {
       manualSum += t.amount || 0;
     });
-    
+
     console.log('🔍🔍🔍 DEBUG COMPLETO - Entradas:', {
       'Total de transações carregadas': transactions.length,
       'Transações únicas (por ID)': uniqueTransactions.length,
@@ -195,7 +195,7 @@ const Dashboard = () => {
         idsComDuplicatas: duplicateIds
       }
     });
-    
+
     // Alerta se houver discrepância
     if (Math.abs(totalIncome - manualSum) > 0.01) {
       console.error('❌ ERRO: Diferença entre cálculos detectada!', {
@@ -204,7 +204,7 @@ const Dashboard = () => {
         diferenca: Math.abs(totalIncome - manualSum)
       });
     }
-    
+
     // Alerta se houver duplicatas
     if (duplicateIds.length > 0 || duplicateKeys.length > 0) {
       console.warn('⚠️ ATENÇÃO: Duplicatas detectadas!', {
@@ -212,12 +212,12 @@ const Dashboard = () => {
         chavesDuplicadas: duplicateKeys
       });
     }
-    
+
     // Verificação do filtro de data e análise detalhada
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth() + 1;
-    
+
     // Agrupa transações por mês/ano para análise
     const transactionsByMonth = incomeTransactions.reduce((acc, t) => {
       const [year, month] = t.date.split('-').map(Number);
@@ -228,7 +228,7 @@ const Dashboard = () => {
       acc[key].push(t);
       return acc;
     }, {} as Record<string, typeof incomeTransactions>);
-    
+
     const totalsByMonth = Object.entries(transactionsByMonth).map(([monthKey, trans]) => ({
       mes: monthKey,
       quantidade: trans.length,
@@ -240,7 +240,7 @@ const Dashboard = () => {
         data: t.date
       }))
     }));
-    
+
     console.log('📊 ANÁLISE POR MÊS:', {
       filtroAtivo: filterType,
       anoSelecionado: selectedYear,
@@ -252,7 +252,7 @@ const Dashboard = () => {
       mesAtual: `${currentYear}-${String(currentMonth).padStart(2, '0')}`,
       totalMesAtual: totalsByMonth.find(m => m.mes === `${currentYear}-${String(currentMonth).padStart(2, '0')}`)?.total || 0
     });
-    
+
     if (filterType === 'all') {
       console.log('📅 Filtro: TODAS as transações (sem filtro de data)');
       console.warn('⚠️ ATENÇÃO: O filtro está em "TODAS". Se você espera R$ 15.045,00, pode ser que precise filtrar por um mês específico.');
@@ -273,7 +273,7 @@ const Dashboard = () => {
         console.warn('⚠️ Transações fora do período selecionado detectadas:', transactionsOutsidePeriod);
       }
     }
-    
+
     return filtered;
   }, [transactions, filterType, selectedYear, selectedMonth]);
 
@@ -428,8 +428,8 @@ const Dashboard = () => {
                           if (percent < 0.05) return ''; // Não mostra label se for muito pequeno
                           return `${name}: ${(percent * 100).toFixed(1)}%`;
                         }}
-                        outerRadius={120}
-                        innerRadius={60}
+                        outerRadius={window.innerWidth < 640 ? 80 : 120}
+                        innerRadius={window.innerWidth < 640 ? 40 : 60}
                         paddingAngle={5}
                         dataKey="value"
                         animationDuration={800}
@@ -463,7 +463,7 @@ const Dashboard = () => {
                             const data = payload[0];
                             const total = (data.payload as any).value;
                             const percent = ((data.payload as any).percent * 100).toFixed(1);
-                            
+
                             return (
                               <div className="bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg p-3">
                                 <div className="flex items-center gap-2 mb-2">
@@ -500,11 +500,14 @@ const Dashboard = () => {
                       />
                       <Legend
                         verticalAlign="bottom"
-                        height={36}
+                        height={48}
                         iconType="circle"
+                        wrapperStyle={{
+                          paddingTop: '20px'
+                        }}
                         formatter={(value) => {
-                          if (value === 'Entradas') return <span className="text-sm">💰 Entradas</span>;
-                          if (value === 'Saídas') return <span className="text-sm">💸 Saídas</span>;
+                          if (value === 'Entradas') return <span className="text-sm">Entradas</span>;
+                          if (value === 'Saídas') return <span className="text-sm">Saídas</span>;
                           return value;
                         }}
                       />
@@ -618,7 +621,7 @@ const Dashboard = () => {
         {showForm && (
           <div className="fixed inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-card/10 backdrop-blur-lg border border-border rounded-2xl p-6 w-full max-w-md">
-              <TransactionForm 
+              <TransactionForm
                 onSubmit={async (data) => {
                   try {
                     await addTransaction(data);

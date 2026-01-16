@@ -91,11 +91,11 @@ const ArtilhariaManager: React.FC = () => {
 
       const existing = localStorage.getItem('artilharia');
       const existingJogadores = existing ? JSON.parse(existing) : [];
-      
+
       // Verifica se já existem jogadores com os mesmos nomes
       const existingNames = new Set(existingJogadores.map((j: Jogador) => j.nome.toLowerCase()));
       const jogadoresToAdd = newJogadores.filter(j => !existingNames.has(j.nome.toLowerCase()));
-      
+
       if (jogadoresToAdd.length === 0) {
         toast({
           title: "Nenhum jogador novo",
@@ -107,13 +107,13 @@ const ArtilhariaManager: React.FC = () => {
 
       const allJogadores = [...existingJogadores, ...jogadoresToAdd];
       localStorage.setItem('artilharia', JSON.stringify(allJogadores));
-      
+
       toast({
         title: "Jogadores importados!",
         description: `${jogadoresToAdd.length} jogadores foram adicionados com sucesso.`,
         variant: "default",
       });
-      
+
       // Recarrega a página para atualizar a lista
       window.location.reload();
     }
@@ -136,7 +136,7 @@ const ArtilhariaManager: React.FC = () => {
     setIsImporting(true);
     try {
       const result = await importArtilhariaToSupabase(user.id);
-      
+
       if (result.success) {
         toast({
           title: "Importação concluída!",
@@ -167,28 +167,28 @@ const ArtilhariaManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Artilharia</h2>
           <p className="text-muted-foreground">Gerencie os jogadores e seus gols</p>
         </div>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 sm:flex flex-wrap gap-2 w-full sm:w-auto">
           <Button
             onClick={handleImportJogadores}
             variant="outline"
-            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white flex-1 sm:flex-none"
           >
             <Upload className="w-4 h-4 mr-2" />
-            Carregar Arquivo
+            <span className="truncate">Carregar</span>
           </Button>
           <Button
             onClick={handleImportToSupabase}
             variant="outline"
             disabled={isImporting || !user}
-            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white flex-1 sm:flex-none"
           >
             <Database className="w-4 h-4 mr-2" />
-            {isImporting ? 'Importando...' : ' Salvar'}
+            <span className="truncate">{isImporting ? 'Salvando...' : 'Salvar'}</span>
           </Button>
           <Button
             onClick={() => {
@@ -196,7 +196,7 @@ const ArtilhariaManager: React.FC = () => {
               setEditingJogador(null);
               setFormData({ nome: '', gols: 0, posicao: '' });
             }}
-            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 col-span-2 sm:col-span-1"
           >
             <Plus className="w-4 h-4 mr-2" />
             Adicionar Jogador
@@ -287,7 +287,7 @@ const ArtilhariaManager: React.FC = () => {
                   <TableRow>
                     <TableHead className="w-12">#</TableHead>
                     <TableHead>Jogador</TableHead>
-                    <TableHead>Posição</TableHead>
+                    <TableHead className="hidden sm:table-cell">Posição</TableHead>
                     <TableHead className="text-center">Gols</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -303,28 +303,28 @@ const ArtilhariaManager: React.FC = () => {
                         )}
                       </TableCell>
                       <TableCell className="font-medium">{jogador.nome}</TableCell>
-                      <TableCell>{jogador.posicao || '-'}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{jogador.posicao || '-'}</TableCell>
                       <TableCell>
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center gap-1 sm:gap-2">
                           <Button
                             size="icon"
                             variant="outline"
                             onClick={() => removerGol(jogador.id)}
                             disabled={jogador.gols === 0}
-                            className="h-8 w-8"
+                            className="h-7 w-7 sm:h-8 sm:w-8"
                           >
-                            <Minus className="w-4 h-4" />
+                            <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
-                          <span className="text-xl font-bold min-w-[3rem] text-center">
+                          <span className="text-lg sm:text-xl font-bold min-w-[2rem] sm:min-w-[3rem] text-center">
                             {jogador.gols}
                           </span>
                           <Button
                             size="icon"
                             variant="outline"
                             onClick={() => adicionarGol(jogador.id)}
-                            className="h-8 w-8"
+                            className="h-7 w-7 sm:h-8 sm:w-8"
                           >
-                            <Plus className="w-4 h-4" />
+                            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
                         </div>
                       </TableCell>

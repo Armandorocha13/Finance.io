@@ -56,18 +56,18 @@ const DateFilter: React.FC<DateFilterProps> = ({
   ];
 
   const quickFilters = [
-    { value: 'all' as FilterType, label: 'Todos', icon: '📊' },
-    { value: 'today' as FilterType, label: 'Hoje', icon: '📅' },
-    { value: 'last7days' as FilterType, label: '7 dias', icon: '📆' },
-    { value: 'last15days' as FilterType, label: '15 dias', icon: '🗓️' },
-    { value: 'last30days' as FilterType, label: '30 dias', icon: '📋' },
-    { value: 'currentMonth' as FilterType, label: 'Mês atual', icon: '📆' },
+    { value: 'all' as FilterType, label: 'Todos' },
+    { value: 'today' as FilterType, label: 'Hoje' },
+    { value: 'last7days' as FilterType, label: '7 dias' },
+    { value: 'last15days' as FilterType, label: '15 dias' },
+    { value: 'last30days' as FilterType, label: '30 dias' },
+    { value: 'currentMonth' as FilterType, label: 'Mês atual' },
   ];
 
   return (
     <Card className="bg-gradient-to-br from-card/20 to-card/10 backdrop-blur-xl border-border/50 shadow-lg">
       <CardContent className="pt-6 pb-6">
-        <div className="space-y-5">
+        <div className="space-y-4">
           {/* Header */}
           <div className="flex items-center justify-center">
             <div className="flex items-center gap-3">
@@ -96,7 +96,6 @@ const DateFilter: React.FC<DateFilterProps> = ({
                     : "hover:bg-accent/50 hover:scale-105 border-border/50"
                 )}
               >
-                <span className="mr-1.5 text-base">{filter.icon}</span>
                 {filter.label}
               </Button>
             ))}
