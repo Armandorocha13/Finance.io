@@ -45,7 +45,7 @@ import { filterTransactionsByDate, getFilterDescription } from '@/utils/dateFilt
 const Dashboard = () => {
   // Hooks para dados
   const { user } = useAuth();
-  const { transactions, isLoading, addTransaction } = useTransactions();
+  const { transactions, isLoading, addTransaction, deleteTransaction, isDeletingTransaction } = useTransactions();
   const { jogadores } = useArtilharia();
 
   // Estados locais
@@ -255,14 +255,13 @@ const Dashboard = () => {
 
     if (filterType === 'all') {
       console.log('📅 Filtro: TODAS as transações (sem filtro de data)');
-      console.warn('⚠️ ATENÇÃO: O filtro está em "TODAS". Se você espera R$ 15.045,00, pode ser que precise filtrar por um mês específico.');
-    } else if (filterType === 'currentMonth') {
-      const transactionsOutsideMonth = incomeTransactions.filter(t => {
-        const [year, month] = t.date.split('-').map(Number);
-        return year !== currentYear || month !== currentMonth;
+    } else if (filterType === 'year') {
+      const transactionsOutsideYear = incomeTransactions.filter(t => {
+        const [year] = t.date.split('-').map(Number);
+        return year !== selectedYear;
       });
-      if (transactionsOutsideMonth.length > 0) {
-        console.warn('⚠️ Transações fora do mês atual detectadas:', transactionsOutsideMonth);
+      if (transactionsOutsideYear.length > 0) {
+        console.warn('⚠️ Transações fora do ano selecionado detectadas:', transactionsOutsideYear);
       }
     } else if (filterType === 'month') {
       const transactionsOutsidePeriod = incomeTransactions.filter(t => {
@@ -601,7 +600,11 @@ const Dashboard = () => {
                 <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
               </div>
             ) : (
-              <TransactionList transactions={transactions || []} />
+              <TransactionList
+                transactions={transactions || []}
+                onDelete={deleteTransaction}
+                isDeleting={isDeletingTransaction}
+              />
             )}
           </TabsContent>
 

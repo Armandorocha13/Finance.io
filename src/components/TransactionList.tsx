@@ -2,28 +2,19 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, TrendingDown, Calendar, Trash2 } from 'lucide-react';
-import { useTransactions } from '@/hooks/useTransactions';
+import { Transaction } from '@/hooks/useTransactions';
 import { useToast } from '@/hooks/use-toast';
-
-// Interface que define a estrutura de uma transação
-interface Transaction {
-  id: string;           // Identificador único da transação
-  description: string;  // Descrição da transação
-  amount: number;       // Valor da transação
-  type: 'income' | 'expense';  // Tipo: entrada ou saída
-  category: string;     // Categoria da transação
-  date: string;        // Data da transação
-}
 
 // Props do componente TransactionList
 interface TransactionListProps {
   transactions: Transaction[];  // Lista de transações a serem exibidas
+  onDelete: (id: string) => Promise<void>; // Função para excluir transação
+  isDeleting: boolean; // Estado de exclusão
 }
 
 // Componente que exibe a lista de transações
-const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
-  // Hooks para gerenciamento de estado e feedback
-  const { deleteTransaction, isDeletingTransaction } = useTransactions();  // Função e estado de exclusão
+const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete, isDeleting }) => {
+  // Hooks para feedback
   const { toast } = useToast();  // Sistema de notificações
 
   // Formata a data para o padrão brasileiro (dd/mm/yyyy)
@@ -47,7 +38,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
   const handleDeleteTransaction = async (transactionId: string) => {
     if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
       try {
-        await deleteTransaction(transactionId);
+        await onDelete(transactionId);
         toast({
           title: "Transação excluída",
           description: "A transação foi removida com sucesso.",
@@ -87,11 +78,10 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
                 {/* Lado esquerdo: ícone, descrição e categoria */}
                 <div className="flex items-center space-x-3">
                   {/* Ícone indicador do tipo de transação */}
-                  <div className={`p-2 rounded-full ${
-                    transaction.type === 'income' 
-                      ? 'bg-green-400/20 text-green-400' 
-                      : 'bg-red-400/20 text-red-400'
-                  }`}>
+                  <div className={`p-2 rounded-full ${transaction.type === 'income'
+                    ? 'bg-green-400/20 text-green-400'
+                    : 'bg-red-400/20 text-red-400'
+                    }`}>
                     {transaction.type === 'income' ? (
                       <TrendingUp className="w-4 h-4" />
                     ) : (
@@ -110,9 +100,8 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
                 <div className="flex items-center gap-3">
                   {/* Valor da transação */}
                   <div className="text-right">
-                    <p className={`font-semibold ${
-                      transaction.type === 'income' ? 'text-green-400' : 'text-red-400'
-                    }`}>
+                    <p className={`font-semibold ${transaction.type === 'income' ? 'text-green-400' : 'text-red-400'
+                      }`}>
                       {transaction.type === 'income' ? '+' : '-'}R$ {transaction.amount.toLocaleString('pt-BR')}
                     </p>
                   </div>
@@ -121,7 +110,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDeleteTransaction(transaction.id)}
-                    disabled={isDeletingTransaction}
+                    disabled={isDeleting}
                     className="opacity-0 group-hover:opacity-100 transition-opacity text-green-500 hover:text-green-400 hover:bg-green-500/10"
                   >
                     <Trash2 className="w-4 h-4" />

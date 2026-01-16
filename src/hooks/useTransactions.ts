@@ -67,6 +67,34 @@ const removeDuplicates = (transactions: Transaction[]): Transaction[] => {
   return Array.from(seen.values());
 };
 
+/**
+ * Formata um item bruto do Supabase para o tipo Transaction
+ */
+const formatTransaction = (item: any): Transaction => {
+  let dateStr = item.date;
+  if (dateStr && typeof dateStr === 'object' && 'getFullYear' in dateStr) {
+    const dateObj = dateStr as unknown as Date;
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    dateStr = `${year}-${month}-${day}`;
+  } else if (typeof dateStr === 'string' && dateStr.includes('T')) {
+    dateStr = dateStr.split('T')[0];
+  } else if (typeof dateStr !== 'string') {
+    dateStr = String(dateStr);
+  }
+
+  return {
+    id: item.id,
+    description: item.description || '',
+    amount: typeof item.amount === 'number' ? item.amount : Number(item.amount) || 0,
+    type: item.type as 'income' | 'expense',
+    category: item.category,
+    date: dateStr,
+    user_id: item.user_id,
+  };
+};
+
 export function useTransactions() {
   // Hooks e estados
   const { user } = useAuth();
@@ -93,11 +121,11 @@ export function useTransactions() {
             const parsed = JSON.parse(savedTransactions);
             // Remove duplicatas do localStorage
             const uniqueParsed = removeDuplicates(parsed);
-            
+
             // Debug: Verificar transações de entrada do localStorage
             const incomeFromLocalStorage = uniqueParsed.filter((t: Transaction) => t.type === 'income');
             const totalIncomeFromLocalStorage = incomeFromLocalStorage.reduce((sum: number, t: Transaction) => sum + (t.amount || 0), 0);
-            
+
             console.log('💾 Transações carregadas do localStorage:', {
               total: parsed.length,
               unicas: uniqueParsed.length,
@@ -111,7 +139,7 @@ export function useTransactions() {
                 date: t.date
               }))
             });
-            
+
             setTransactions(uniqueParsed);
             // Atualiza o localStorage com dados sem duplicatas
             if (uniqueParsed.length > 0) {
@@ -164,42 +192,16 @@ export function useTransactions() {
           }
         } else {
           // Converte os dados do Supabase para o formato Transaction
-          // Garante que a data está no formato YYYY-MM-DD
-          const formattedData: Transaction[] = (data || []).map((item: any) => {
-            let dateStr = item.date;
-            // Se a data vier como objeto Date ou string com timezone, converte para YYYY-MM-DD
-            if (dateStr && typeof dateStr === 'object' && 'getFullYear' in dateStr) {
-              // É um objeto Date
-              const dateObj = dateStr as unknown as Date;
-              const year = dateObj.getFullYear();
-              const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-              const day = String(dateObj.getDate()).padStart(2, '0');
-              dateStr = `${year}-${month}-${day}`;
-            } else if (typeof dateStr === 'string' && dateStr.includes('T')) {
-              // Remove hora e timezone, mantém apenas a data
-              dateStr = dateStr.split('T')[0];
-            } else if (typeof dateStr !== 'string') {
-              // Se não for string nem Date, converte para string
-              dateStr = String(dateStr);
-            }
-            return {
-              id: item.id,
-              description: item.description || '',
-              // Preserva o valor numérico direto da coluna amount da tabela transactions
-              amount: typeof item.amount === 'number' ? item.amount : Number(item.amount) || 0,
-              type: item.type as 'income' | 'expense',
-              category: item.category,
-              date: dateStr,
-              user_id: item.user_id,
-            };
-          });
+          const formattedData: Transaction[] = (data || []).map(formatTransaction);
+
+          // Remove duplicatas baseado no ID antes de definir usando a função auxiliar
           // Remove duplicatas baseado no ID antes de definir usando a função auxiliar
           const uniqueData = removeDuplicates(formattedData);
-          
+
           // Debug: Verificar transações de entrada carregadas do Supabase
           const incomeFromSupabase = uniqueData.filter(t => t.type === 'income');
           const totalIncomeFromSupabase = incomeFromSupabase.reduce((sum, t) => sum + (t.amount || 0), 0);
-          
+
           console.log('📊 Transações carregadas do Supabase:', {
             total: formattedData.length,
             unicas: uniqueData.length,
@@ -213,7 +215,7 @@ export function useTransactions() {
               date: t.date
             }))
           });
-          
+
           setTransactions(uniqueData);
           // Sincroniza com localStorage como backup
           if (uniqueData.length > 0) {
@@ -253,7 +255,7 @@ export function useTransactions() {
     // Para desenvolvimento: usa UUID fixo se não houver usuário real
     const DEV_USER_ID = '00000000-0000-0000-0000-000000000001';
     const subscribeUserId = user?.id && isValidUUID(user.id) ? user.id : DEV_USER_ID;
-    
+
     if (user?.id) {
       const channel = supabase
         .channel('transactions-changes')
@@ -273,92 +275,41 @@ export function useTransactions() {
                 const exists = prev.some(t => t.id === newTransaction.id);
                 if (exists) {
                   console.log('⚠️ Transação duplicada detectada na subscription:', newTransaction.id);
-                  return prev; // Não adiciona se já existe
+                  return prev;
                 }
-                
-                // Formata a transação antes de adicionar
-                let dateStr: string = newTransaction.date as string;
-                if (dateStr && typeof dateStr === 'object' && 'getFullYear' in dateStr) {
-                  // É um objeto Date
-                  const dateObj = dateStr as unknown as Date;
-                  const year = dateObj.getFullYear();
-                  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                  const day = String(dateObj.getDate()).padStart(2, '0');
-                  dateStr = `${year}-${month}-${day}`;
-                } else if (typeof dateStr === 'string' && dateStr.includes('T')) {
-                  dateStr = dateStr.split('T')[0];
-                } else if (typeof dateStr !== 'string') {
-                  // Se não for string nem Date, converte para string
-                  dateStr = String(dateStr);
-                }
-                
-                const formattedTransaction: Transaction = {
-                  id: newTransaction.id,
-                  description: newTransaction.description || '',
-                  // Preserva o valor numérico direto da coluna amount da tabela transactions
-                  amount: typeof newTransaction.amount === 'number' ? newTransaction.amount : Number(newTransaction.amount) || 0,
-                  type: newTransaction.type as 'income' | 'expense',
-                  category: newTransaction.category,
-                  date: dateStr,
-                  user_id: newTransaction.user_id,
-                };
-                
+
+                const formattedTransaction = formatTransaction(newTransaction);
+
                 const updated = [formattedTransaction, ...prev];
                 // Remove duplicatas após adicionar
                 const unique = updated.filter((t, index, self) =>
                   index === self.findIndex(tr => tr.id === t.id)
                 );
-                
+
                 // Sincroniza com localStorage
                 if (unique.length > 0) {
                   localStorage.setItem('transactions', JSON.stringify(unique));
                 }
-                
+
                 return unique;
               });
             } else if (payload.eventType === 'UPDATE') {
               setTransactions((prev) => {
                 const updatedTransaction = payload.new as any;
-                
-                // Formata a transação antes de atualizar
-                let dateStr: string = updatedTransaction.date as string;
-                if (dateStr && typeof dateStr === 'object' && 'getFullYear' in dateStr) {
-                  // É um objeto Date
-                  const dateObj = dateStr as unknown as Date;
-                  const year = dateObj.getFullYear();
-                  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                  const day = String(dateObj.getDate()).padStart(2, '0');
-                  dateStr = `${year}-${month}-${day}`;
-                } else if (typeof dateStr === 'string' && dateStr.includes('T')) {
-                  dateStr = dateStr.split('T')[0];
-                } else if (typeof dateStr !== 'string') {
-                  // Se não for string nem Date, converte para string
-                  dateStr = String(dateStr);
-                }
-                
-                const formattedTransaction: Transaction = {
-                  id: updatedTransaction.id,
-                  description: updatedTransaction.description || '',
-                  // Preserva o valor numérico direto da coluna amount da tabela transactions
-                  amount: typeof updatedTransaction.amount === 'number' ? updatedTransaction.amount : Number(updatedTransaction.amount) || 0,
-                  type: updatedTransaction.type as 'income' | 'expense',
-                  category: updatedTransaction.category,
-                  date: dateStr,
-                  user_id: updatedTransaction.user_id,
-                };
-                
+                const formattedTransaction = formatTransaction(updatedTransaction);
+
                 const updated = prev.map((t) => (t.id === formattedTransaction.id ? formattedTransaction : t));
-                
+
                 // Remove duplicatas após atualizar
                 const unique = updated.filter((t, index, self) =>
                   index === self.findIndex(tr => tr.id === t.id)
                 );
-                
+
                 // Sincroniza com localStorage
                 if (unique.length > 0) {
                   localStorage.setItem('transactions', JSON.stringify(unique));
                 }
-                
+
                 return unique;
               });
             } else if (payload.eventType === 'DELETE') {
@@ -381,9 +332,9 @@ export function useTransactions() {
         supabase.removeChannel(channel);
       };
     }
-    
+
     // Retorna função vazia se não criar subscription
-    return () => {};
+    return () => { };
   }, [user?.id]);
 
   /**
@@ -440,32 +391,8 @@ export function useTransactions() {
         throw error;
       }
 
-        // Sucesso no Supabase - formata os dados
-        let dateStr: string = data.date as string;
-        if (dateStr && typeof dateStr === 'object' && 'getFullYear' in dateStr) {
-          // É um objeto Date
-          const dateObj = dateStr as unknown as Date;
-          const year = dateObj.getFullYear();
-          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-          const day = String(dateObj.getDate()).padStart(2, '0');
-          dateStr = `${year}-${month}-${day}`;
-        } else if (typeof dateStr === 'string' && dateStr.includes('T')) {
-          dateStr = dateStr.split('T')[0];
-        } else if (typeof dateStr !== 'string') {
-          // Se não for string nem Date, converte para string
-          dateStr = String(dateStr);
-        }
-        
-        const formattedTransaction: Transaction = {
-          id: data.id,
-          description: data.description || '',
-          // Preserva o valor numérico direto da coluna amount da tabela transactions
-          amount: typeof data.amount === 'number' ? data.amount : Number(data.amount) || 0,
-          type: data.type as 'income' | 'expense',
-          category: data.category,
-          date: dateStr,
-          user_id: data.user_id,
-        };
+      if (data) {
+        const formattedTransaction = formatTransaction(data);
 
         setTransactions((prev) => {
           // Verifica se a transação já existe antes de adicionar
@@ -477,23 +404,25 @@ export function useTransactions() {
             localStorage.setItem('transactions', JSON.stringify(updated));
             return updated;
           }
-          
-          const updated = [...prev, formattedTransaction];
+
+          // Adiciona ao TOPO da lista (importante para visibilidade imediata)
+          const updated = [formattedTransaction, ...prev];
           // Remove duplicatas antes de salvar
           const unique = updated.filter((t, index, self) =>
             index === self.findIndex(tr => tr.id === t.id)
           );
-          
+
           // Sincroniza com localStorage como backup
           localStorage.setItem('transactions', JSON.stringify(unique));
           return unique;
         });
 
-      toast.success("Sua transação foi salva com sucesso no banco de dados.");
+        toast.success("Sua transação foi salva com sucesso no banco de dados.");
+      }
       return;
     } catch (error: any) {
       console.error('Erro ao salvar no Supabase:', error);
-      
+
       // Fallback: salva no localStorage se Supabase falhar
       const transaction: Transaction = {
         ...newTransaction,
@@ -511,7 +440,7 @@ export function useTransactions() {
           localStorage.setItem('transactions', JSON.stringify(updated));
           return updated;
         }
-        
+
         const updated = [...prev, transaction];
         // Remove duplicatas antes de salvar
         const unique = removeDuplicates(updated);
@@ -537,7 +466,7 @@ export function useTransactions() {
    */
   const deleteTransaction = async (transactionId: string) => {
     setIsDeletingTransaction(true);
-    
+
     try {
       // Para desenvolvimento: usa UUID fixo se não houver usuário real
       const DEV_USER_ID = '00000000-0000-0000-0000-000000000001';
@@ -566,7 +495,7 @@ export function useTransactions() {
       return;
     } catch (error: any) {
       console.error('Erro ao excluir transação:', error);
-      
+
       // Tenta excluir do localStorage como último recurso
       try {
         setTransactions((prev) => {

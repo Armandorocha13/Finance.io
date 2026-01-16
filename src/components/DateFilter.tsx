@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Filter, Calendar, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type FilterType = 'all' | 'today' | 'last7days' | 'last15days' | 'last30days' | 'currentMonth' | 'month';
+export type FilterType = 'all' | 'year' | 'month';
 
 export interface DateFilterProps {
   filterType: FilterType;
@@ -57,11 +57,8 @@ const DateFilter: React.FC<DateFilterProps> = ({
 
   const quickFilters = [
     { value: 'all' as FilterType, label: 'Todos' },
-    { value: 'today' as FilterType, label: 'Hoje' },
-    { value: 'last7days' as FilterType, label: '7 dias' },
-    { value: 'last15days' as FilterType, label: '15 dias' },
-    { value: 'last30days' as FilterType, label: '30 dias' },
-    { value: 'currentMonth' as FilterType, label: 'Mês atual' },
+    { value: 'year' as FilterType, label: 'Anual' },
+    { value: 'month' as FilterType, label: 'Mensal' },
   ];
 
   return (
@@ -90,7 +87,7 @@ const DateFilter: React.FC<DateFilterProps> = ({
                 size="sm"
                 onClick={() => onFilterChange(filter.value)}
                 className={cn(
-                  "transition-all duration-200",
+                  "transition-all duration-200 min-w-[80px]",
                   filterType === filter.value
                     ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md scale-105"
                     : "hover:bg-accent/50 hover:scale-105 border-border/50"
@@ -99,25 +96,14 @@ const DateFilter: React.FC<DateFilterProps> = ({
                 {filter.label}
               </Button>
             ))}
-            <Button
-              variant={filterType === 'month' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onFilterChange('month')}
-              className={cn(
-                "transition-all duration-200",
-                filterType === 'month'
-                  ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md scale-105"
-                  : "hover:bg-accent/50 hover:scale-105 border-border/50"
-              )}
-            >
-              <Calendar className="w-4 h-4 mr-1.5" />
-              Personalizado
-            </Button>
           </div>
 
           {/* Seletores de Mês/Ano (quando personalizado) */}
-          {filterType === 'month' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border/50 animate-in slide-in-from-top-2 duration-300 max-w-md mx-auto">
+          {(filterType === 'month' || filterType === 'year') && (
+            <div className={cn(
+              "grid gap-4 pt-4 border-t border-border/50 animate-in slide-in-from-top-2 duration-300 w-full",
+              filterType === 'month' ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
+            )}>
               <div className="space-y-2">
                 <Label htmlFor="year" className="text-sm font-medium flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -129,7 +115,6 @@ const DateFilter: React.FC<DateFilterProps> = ({
                 >
                   <SelectTrigger id="year" className="h-11 bg-background/50 border-border/50 hover:border-primary/50 transition-colors">
                     <SelectValue placeholder="Selecione o ano" />
-                    <ChevronDown className="w-4 h-4 opacity-50" />
                   </SelectTrigger>
                   <SelectContent>
                     {years.map((year) => (
@@ -141,31 +126,32 @@ const DateFilter: React.FC<DateFilterProps> = ({
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="month" className="text-sm font-medium flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  Mês
-                </Label>
-                <Select
-                  value={selectedMonth.toString()}
-                  onValueChange={(value) => onMonthChange(parseInt(value))}
-                >
-                  <SelectTrigger id="month" className="h-11 bg-background/50 border-border/50 hover:border-primary/50 transition-colors">
-                    <SelectValue placeholder="Selecione o mês" />
-                    <ChevronDown className="w-4 h-4 opacity-50" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {months.map((month) => (
-                      <SelectItem key={month.value} value={month.value.toString()}>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{month.label}</span>
-                          <span className="text-xs text-muted-foreground">({month.fullLabel})</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {filterType === 'month' && (
+                <div className="space-y-2">
+                  <Label htmlFor="month" className="text-sm font-medium flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    Mês
+                  </Label>
+                  <Select
+                    value={selectedMonth.toString()}
+                    onValueChange={(value) => onMonthChange(parseInt(value))}
+                  >
+                    <SelectTrigger id="month" className="h-11 bg-background/50 border-border/50 hover:border-primary/50 transition-colors">
+                      <SelectValue placeholder="Selecione o mês" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map((month) => (
+                        <SelectItem key={month.value} value={month.value.toString()}>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{month.label}</span>
+                            <span className="text-xs text-muted-foreground">({month.fullLabel})</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           )}
         </div>

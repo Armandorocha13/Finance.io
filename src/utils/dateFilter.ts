@@ -26,45 +26,20 @@ export function filterTransactionsByDate(
     return transactions;
   }
 
-  const now = new Date();
   let startDate: Date;
-  let endDate: Date = new Date(now);
-  endDate.setHours(23, 59, 59, 999);
+  let endDate: Date;
 
   switch (filterType) {
-    case 'today':
-      // Apenas hoje
-      startDate = new Date(now);
-      startDate.setHours(0, 0, 0, 0);
-      break;
-
-    case 'last7days':
-      // Últimos 7 dias
-      startDate = new Date(now);
-      startDate.setDate(now.getDate() - 7);
-      startDate.setHours(0, 0, 0, 0);
-      break;
-
-    case 'last15days':
-      // Últimos 15 dias
-      startDate = new Date(now);
-      startDate.setDate(now.getDate() - 15);
-      startDate.setHours(0, 0, 0, 0);
-      break;
-
-    case 'last30days':
-      // Últimos 30 dias
-      startDate = new Date(now);
-      startDate.setDate(now.getDate() - 30);
-      startDate.setHours(0, 0, 0, 0);
-      break;
-
-    case 'currentMonth':
-      // Mês atual
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      startDate.setHours(0, 0, 0, 0);
-      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      endDate.setHours(23, 59, 59, 999);
+    case 'year':
+      // Ano específico
+      if (year) {
+        startDate = new Date(year, 0, 1);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(year, 11, 31);
+        endDate.setHours(23, 59, 59, 999);
+      } else {
+        return transactions;
+      }
       break;
 
     case 'month':
@@ -85,14 +60,12 @@ export function filterTransactionsByDate(
 
   return transactions.filter((transaction) => {
     // Parse da data da transação sem problemas de timezone
-    // Se a data está no formato YYYY-MM-DD, faz parse manual
     let transactionDate: Date;
     if (transaction.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      const [year, month, day] = transaction.date.split('-').map(Number);
-      transactionDate = new Date(year, month - 1, day);
-      transactionDate.setHours(12, 0, 0, 0); // Usa meio-dia para evitar problemas de timezone
+      const [y, m, d] = transaction.date.split('-').map(Number);
+      transactionDate = new Date(y, m - 1, d);
+      transactionDate.setHours(12, 0, 0, 0);
     } else {
-      // Fallback para outros formatos
       transactionDate = new Date(transaction.date + 'T12:00:00');
     }
     return transactionDate >= startDate && transactionDate <= endDate;
@@ -107,34 +80,21 @@ export function getFilterDescription(
   year?: number,
   month?: number
 ): string {
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+
   switch (filterType) {
     case 'all':
       return 'Todos os dados';
-    case 'today':
-      return 'Hoje';
-    case 'last7days':
-      return 'Últimos 7 dias';
-    case 'last15days':
-      return 'Últimos 15 dias';
-    case 'last30days':
-      return 'Últimos 30 dias';
-    case 'currentMonth': {
-      const monthNames = [
-        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-      ];
-      const now = new Date();
-      return `${monthNames[now.getMonth()]} de ${now.getFullYear()}`;
-    }
+    case 'year':
+      return year ? `Ano de ${year}` : 'Ano selecionado';
     case 'month':
       if (year && month) {
-        const monthNames = [
-          'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-        ];
         return `${monthNames[month - 1]} de ${year}`;
       }
-      return 'Período selecionado';
+      return 'Mês selecionado';
     default:
       return 'Período selecionado';
   }
