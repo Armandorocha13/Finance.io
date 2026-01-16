@@ -5,11 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useArtilharia, Jogador } from '@/hooks/useArtilharia';
-import { Plus, Edit, Trash2, Minus, Trophy, Upload, Database } from 'lucide-react';
+import { Plus, Edit, Trash2, Minus, Trophy, Database } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { jogadoresData } from '@/utils/populateArtilharia';
-import { importArtilhariaToSupabase } from '@/utils/importArtilhariaToSupabase';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Table,
@@ -88,45 +86,6 @@ const ArtilhariaManager = () => {
     setFormData({ nome: '', gols: 0, posicao: '' });
     setShowForm(false);
     setEditingJogador(null);
-  };
-
-  const handleImportJogadores = () => {
-    if (window.confirm('Deseja importar todos os jogadores? Isso irá adicionar os jogadores à lista existente.')) {
-      const newJogadores = jogadoresData.map((data, index) => ({
-        id: `${Date.now()}-${index}`,
-        nome: data.jogador,
-        gols: data.gols,
-        posicao: undefined,
-      }));
-
-      const existing = localStorage.getItem('artilharia');
-      const existingJogadores = existing ? JSON.parse(existing) : [];
-
-      // Verifica se já existem jogadores com os mesmos nomes
-      const existingNames = new Set(existingJogadores.map((j: Jogador) => j.nome.toLowerCase()));
-      const jogadoresToAdd = newJogadores.filter(j => !existingNames.has(j.nome.toLowerCase()));
-
-      if (jogadoresToAdd.length === 0) {
-        toast({
-          title: "Nenhum jogador novo",
-          description: "Todos os jogadores já estão cadastrados.",
-          variant: "default",
-        });
-        return;
-      }
-
-      const allJogadores = [...existingJogadores, ...jogadoresToAdd];
-      localStorage.setItem('artilharia', JSON.stringify(allJogadores));
-
-      toast({
-        title: "Jogadores importados!",
-        description: `${jogadoresToAdd.length} jogadores foram adicionados com sucesso.`,
-        variant: "default",
-      });
-
-      // Recarrega a página para atualizar a lista
-      window.location.reload();
-    }
   };
 
   const handleSyncSupabase = async () => {
@@ -237,29 +196,20 @@ const ArtilhariaManager = () => {
           <h2 className="text-2xl font-bold text-foreground">Artilharia</h2>
           <p className="text-muted-foreground">Gerencie os jogadores e seus gols</p>
         </div>
-        <div className="grid grid-cols-2 sm:flex flex-wrap gap-2 w-full sm:w-auto">
-          <Button
-            onClick={handleImportJogadores}
-            variant="outline"
-            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white flex-1 sm:flex-none"
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            <span className="truncate">Carregar</span>
-          </Button>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Button
             onClick={handleSyncSupabase}
-            variant="outline"
             disabled={isImporting || !user}
-            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white flex-1 sm:flex-none"
+            className="bg-green-600 hover:bg-green-700 text-white flex-1 sm:flex-none"
           >
             <Database className="w-4 h-4 mr-2" />
             <span className="truncate">{isImporting ? 'Salvando...' : 'Salvar'}</span>
           </Button>
           <Button
             onClick={handleResetAll}
-            variant="outline"
+            variant="destructive"
             disabled={isResetting || !user}
-            className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white flex-1 sm:flex-none"
+            className="flex-1 sm:flex-none"
           >
             <Trash2 className="w-4 h-4 mr-2" />
             <span className="truncate">{isResetting ? 'Zerando...' : 'Zerar Tudo'}</span>
@@ -270,7 +220,8 @@ const ArtilhariaManager = () => {
               setEditingJogador(null);
               setFormData({ nome: '', gols: 0, posicao: '' });
             }}
-            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 col-span-2 sm:col-span-1"
+            variant="outline"
+            className="flex-1 sm:flex-none"
           >
             <Plus className="w-4 h-4 mr-2" />
             Adicionar Jogador
@@ -331,7 +282,7 @@ const ArtilhariaManager = () => {
                 <Button type="button" variant="outline" onClick={handleCancel}>
                   Cancelar
                 </Button>
-                <Button type="submit">
+                <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white text-white">
                   {editingJogador ? 'Atualizar' : 'Adicionar'}
                 </Button>
               </div>
