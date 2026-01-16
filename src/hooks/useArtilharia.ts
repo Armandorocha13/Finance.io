@@ -104,7 +104,7 @@ export function useArtilharia() {
    */
   const updateJogador = async (id: string, updatedJogador: Partial<Jogador>) => {
     setJogadores(prev => {
-      const updated = prev.map(j => 
+      const updated = prev.map(j =>
         j.id === id ? { ...j, ...updatedJogador } : j
       );
       localStorage.setItem('artilharia', JSON.stringify(updated));
@@ -136,7 +136,7 @@ export function useArtilharia() {
    */
   const adicionarGol = async (id: string) => {
     setJogadores(prev => {
-      const updated = prev.map(j => 
+      const updated = prev.map(j =>
         j.id === id ? { ...j, gols: j.gols + 1 } : j
       );
       localStorage.setItem('artilharia', JSON.stringify(updated));
@@ -153,13 +153,22 @@ export function useArtilharia() {
    */
   const removerGol = async (id: string) => {
     setJogadores(prev => {
-      const updated = prev.map(j => 
+      const updated = prev.map(j =>
         j.id === id ? { ...j, gols: Math.max(0, j.gols - 1) } : j
       );
       localStorage.setItem('artilharia', JSON.stringify(updated));
       toast.success("Gol removido!");
       return updated;
     });
+  };
+
+  /**
+   * Remove todos os jogadores da artilharia (Zera a lista)
+   */
+  const resetArtilharia = async () => {
+    setJogadores([]);
+    localStorage.removeItem('artilharia');
+    toast.success("Artilharia zerada com sucesso!");
   };
 
   /**
@@ -176,6 +185,7 @@ export function useArtilharia() {
     deleteJogador,
     adicionarGol,
     removerGol,
+    resetArtilharia,
   };
 }
 

@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { jogadoresData } from '@/utils/populateArtilharia';
 import { importArtilhariaToSupabase } from '@/utils/importArtilhariaToSupabase';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Table,
   TableBody,
@@ -19,13 +20,22 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-const ArtilhariaManager: React.FC = () => {
-  const { jogadores, addJogador, updateJogador, deleteJogador, adicionarGol, removerGol } = useArtilharia();
+const ArtilhariaManager = () => {
+  const {
+    jogadores,
+    addJogador,
+    updateJogador,
+    deleteJogador,
+    adicionarGol,
+    removerGol,
+    resetArtilharia
+  } = useArtilharia();
   const { toast } = useToast();
   const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [editingJogador, setEditingJogador] = useState<Jogador | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
     gols: 0,
@@ -165,6 +175,50 @@ const ArtilhariaManager: React.FC = () => {
     }
   };
 
+  const handleResetAll = async () => {
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Você precisa estar autenticado para realizar esta ação.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!window.confirm('TEM CERTEZA? Isso irá deletar TODOS os jogadores da artilharia do banco de dados e do seu celular. Esta ação não pode ser desfeita!')) {
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      // Deleta do Supabase
+      const { error } = await supabase
+        .from('artilharia')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Deleta do localStorage e estado local
+      await resetArtilharia();
+
+      toast({
+        title: "Artilharia Zerada",
+        description: "Todos os dados foram removidos com sucesso.",
+        variant: "default",
+      });
+    } catch (error: any) {
+      console.error('Erro ao zerar artilharia:', error);
+      toast({
+        title: "Erro",
+        description: `Não foi possível zerar os dados: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -189,6 +243,15 @@ const ArtilhariaManager: React.FC = () => {
           >
             <Database className="w-4 h-4 mr-2" />
             <span className="truncate">{isImporting ? 'Salvando...' : 'Salvar'}</span>
+          </Button>
+          <Button
+            onClick={handleResetAll}
+            variant="outline"
+            disabled={isResetting || !user}
+            className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white flex-1 sm:flex-none"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            <span className="truncate">{isResetting ? 'Zerando...' : 'Zerar Tudo'}</span>
           </Button>
           <Button
             onClick={() => {
