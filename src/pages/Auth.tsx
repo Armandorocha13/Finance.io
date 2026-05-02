@@ -106,14 +106,14 @@ const Auth = () => {
   if (user) return null;
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#0a0a0a] flex items-center justify-center p-6">
+    <div className="min-h-screen relative overflow-hidden bg-background flex items-center justify-center p-6">
       {/* Animated background elements */}
       <div className="absolute inset-0 w-full h-full">
-        <div className="absolute top-0 -left-4 w-72 h-72 bg-green-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-        <div className="absolute top-0 -right-4 w-72 h-72 bg-green-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-green-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
-        <div className="absolute -bottom-8 right-20 w-72 h-72 bg-green-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-6000"></div>
-        <div className="absolute inset-0 bg-[#0a0a0a] [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/20 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-primary/30 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-primary/20 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+        <div className="absolute -bottom-8 right-20 w-72 h-72 bg-primary/30 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-6000"></div>
+        <div className="absolute inset-0 bg-background [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
       </div>
 
       <div className="w-full max-w-md relative z-10">
@@ -122,13 +122,13 @@ const Auth = () => {
           <div className="flex items-center justify-center mb-4">
             <img src="/logo.png" alt="Vaidoso FC" className="w-40 h-40 object-contain drop-shadow-2xl mix-blend-screen" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Vaidoso FC</h1>
-          <p className="text-slate-300">Gestão financeira e artilharia do clube</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Vaidoso FC</h1>
+          <p className="text-muted-foreground">Gestão financeira e artilharia do clube</p>
         </div>
 
-        <Card className="bg-white/10 backdrop-blur-lg border-white/20">
+        <Card className="bg-card/90 backdrop-blur-lg border-border">
           <CardHeader>
-            <CardTitle className="text-2xl text-center text-white">
+            <CardTitle className="text-2xl text-center text-card-foreground">
               {isMagic ? 'Link por Email' : (isLogin ? 'Login' : 'Criar Conta')}
             </CardTitle>
           </CardHeader>
