@@ -62,7 +62,7 @@ const DateFilter: React.FC<DateFilterProps> = ({
   ];
 
   return (
-    <Card className="bg-gradient-to-br from-card/20 to-card/10 backdrop-blur-xl border-border/50 shadow-lg">
+    <Card className="border-border shadow-sm">
       <CardContent className="pt-6 pb-6">
         <div className="space-y-4">
           {/* Header */}

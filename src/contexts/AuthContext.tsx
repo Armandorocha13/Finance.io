@@ -1,16 +1,18 @@
 /**
  * AuthContext.tsx
- * 
- * Contexto de autenticação da aplicação Vaidoso FC
- * 
+ *
+ * Contexto de autenticação da aplicação Finance.io
+ *
  * Gerencia autenticação usando Supabase Auth:
- * - Login e cadastro de usuários
+ * - Login com email + senha
+ * - Login com Google (OAuth)
+ * - Magic Link (login sem senha via email)
+ * - Cadastro de usuários
  * - Gerenciamento de sessão
- * - Verificação de autenticação
  * - Logout
- * 
- * @author Vaidoso FC
- * @version 2.0.0
+ *
+ * @author Finance.io
+ * @version 3.0.0
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -20,30 +22,21 @@ import { useToast } from '@/hooks/use-toast';
 
 /**
  * Tipo do contexto de autenticação
- * Define todas as propriedades e métodos disponíveis
  */
 interface AuthContextType {
-  user: User | null; // Usuário atual autenticado
-  session: Session | null; // Sessão do Supabase
-  loading: boolean; // Estado de carregamento inicial
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+  isLoading: boolean;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithGoogle: () => Promise<{ error: any }>;
+  signInWithMagicLink: (email: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  isLoading: boolean; // Estado de carregamento adicional
 }
 
-// Criação do contexto
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/**
- * Hook para acessar o contexto de autenticação
- * 
- * @returns {AuthContextType} Contexto de autenticação
- * @throws {Error} Se usado fora do AuthProvider
- * 
- * @example
- * const { user, signOut } = useAuth();
- */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -52,15 +45,6 @@ export const useAuth = () => {
   return context;
 };
 
-/**
- * Provider de autenticação
- * 
- * Gerencia autenticação real usando Supabase Auth.
- * Monitora mudanças de sessão e atualiza o estado automaticamente.
- * 
- * @param {React.ReactNode} children - Componentes filhos
- * @returns {JSX.Element} Provider de autenticação
- */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
@@ -68,19 +52,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
-  /**
-   * Carrega a sessão atual ao montar o componente
-   * e monitora mudanças de autenticação
-   */
   useEffect(() => {
-    // Carrega sessão inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    // Monitora mudanças de autenticação
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -92,14 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  /**
-   * Função de cadastro de novo usuário
-   * 
-   * @param {string} email - Email do usuário
-   * @param {string} password - Senha do usuário
-   * @param {string} fullName - Nome completo (opcional)
-   * @returns {Promise<{ error: any }>} Retorna erro se houver, null se sucesso
-   */
+  /** Cadastro com email + senha */
   const signUp = async (email: string, password: string, fullName?: string) => {
     setIsLoading(true);
     try {
@@ -114,11 +85,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
       });
 
-      if (error) {
-        return { error };
-      }
+      if (error) return { error };
 
-      // Atualiza estado local
       if (data.session) {
         setSession(data.session);
         setUser(data.user);
@@ -132,43 +100,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  /**
-   * Função de login
-   * 
-   * @param {string} email - Email do usuário
-   * @param {string} password - Senha do usuário
-   * @returns {Promise<{ error: any }>} Retorna erro se houver, null se sucesso
-   */
+  /** Login com email + senha */
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-      if (error) {
-        console.error('Erro no signIn:', error);
-        return { error };
-      }
+      if (error) return { error };
 
-      // Atualiza estado local
       if (data.session) {
         setSession(data.session);
         setUser(data.user);
       } else {
-        // Se não há sessão, pode ser que o email não esteja confirmado
-        console.warn('Login realizado mas sem sessão. Verifique se o email foi confirmado.');
-        return { 
-          error: { 
-            message: 'Email não confirmado. Verifique sua caixa de entrada.' 
-          } 
+        return {
+          error: { message: 'Email não confirmado. Verifique sua caixa de entrada.' },
         };
       }
 
       return { error: null };
     } catch (error: any) {
-      console.error('Exceção no signIn:', error);
       return { error };
     } finally {
       setIsLoading(false);
@@ -176,58 +126,101 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
-   * Função de logout
-   * 
-   * @returns {Promise<void>} Promise que resolve quando logout é concluído
+   * Login com Google OAuth
+   * Redireciona para o provedor e volta para a aplicação
    */
+  const signInWithGoogle = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) return { error };
+      return { error: null };
+    } catch (error: any) {
+      return { error };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Magic Link — envia email com link de acesso (sem senha)
+   * Ideal para aplicações financeiras onde segurança é prioridade
+   */
+  const signInWithMagicLink = async (email: string) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          shouldCreateUser: true,
+        },
+      });
+
+      if (error) return { error };
+      return { error: null };
+    } catch (error: any) {
+      return { error };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /** Logout */
   const signOut = async () => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signOut();
-      
+
       if (error) {
         toast({
-          title: "Erro",
-          description: "Erro ao fazer logout. Tente novamente.",
-          variant: "destructive",
+          title: 'Erro',
+          description: 'Erro ao fazer logout. Tente novamente.',
+          variant: 'destructive',
         });
         return;
       }
 
-      // Limpa estado local
       setSession(null);
       setUser(null);
 
       toast({
-        title: "Logout realizado",
-        description: "Você foi desconectado com sucesso.",
+        title: 'Logout realizado',
+        description: 'Você foi desconectado com sucesso.',
       });
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
       toast({
-        title: "Erro",
-        description: "Erro ao fazer logout. Tente novamente.",
-        variant: "destructive",
+        title: 'Erro',
+        description: 'Erro ao fazer logout. Tente novamente.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Valor do contexto
   const value = {
     user,
     session,
     loading,
+    isLoading,
     signUp,
     signIn,
+    signInWithGoogle,
+    signInWithMagicLink,
     signOut,
-    isLoading,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

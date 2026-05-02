@@ -6,17 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
-import { Eye, EyeOff, DollarSign } from 'lucide-react';
+import { Eye, EyeOff, DollarSign, Mail, Sparkles } from 'lucide-react';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isMagic, setIsMagic] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
-  const { signIn, signUp, user, loading: authLoading } = useAuth();
+  const [magicSent, setMagicSent] = useState(false);
+
+  const { signIn, signUp, signInWithMagicLink, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   // Redireciona para home se já estiver autenticado
@@ -34,73 +36,59 @@ const Auth = () => {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
-          console.error('Erro de login:', error);
-          
-          // Trata diferentes tipos de erro
-          let errorMessage = "Erro ao fazer login. Tente novamente.";
-          
+          let errorMessage = 'Erro ao fazer login. Tente novamente.';
           if (error.message.includes('Invalid login credentials') || error.message.includes('Invalid credentials')) {
-            errorMessage = "Email ou senha incorretos. Verifique suas credenciais.";
+            errorMessage = 'Email ou senha incorretos. Verifique suas credenciais.';
           } else if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
-            errorMessage = "Email não confirmado. Verifique sua caixa de entrada e confirme seu email antes de fazer login.";
+            errorMessage = 'Email não confirmado. Verifique sua caixa de entrada e confirme seu email antes de fazer login.';
           } else if (error.message.includes('User not found')) {
-            errorMessage = "Usuário não encontrado. Verifique se o email está correto.";
+            errorMessage = 'Usuário não encontrado. Verifique se o email está correto.';
           } else {
             errorMessage = error.message || errorMessage;
           }
-          
-          toast({
-            title: "Erro de Login",
-            description: errorMessage,
-            variant: "destructive",
-          });
+          toast({ title: 'Erro de Login', description: errorMessage, variant: 'destructive' });
         } else {
-          toast({
-            title: "Login realizado!",
-            description: "Bem-vindo de volta ao Vaidoso FC!",
-          });
-          // Pequeno delay para garantir que a sessão seja atualizada
-          setTimeout(() => {
-            navigate('/');
-          }, 500);
+          toast({ title: 'Login realizado!', description: 'Bem-vindo de volta ao Vaidoso FC!' });
+          setTimeout(() => navigate('/'), 500);
         }
       } else {
         const { error } = await signUp(email, password, fullName);
         if (error) {
           if (error.message.includes('User already registered')) {
-            toast({
-              title: "Usuário já existe",
-              description: "Este email já está cadastrado. Faça login ou use outro email.",
-              variant: "destructive",
-            });
+            toast({ title: 'Usuário já existe', description: 'Este email já está cadastrado. Faça login ou use outro email.', variant: 'destructive' });
           } else {
-            toast({
-              title: "Erro no Cadastro",
-              description: error.message,
-              variant: "destructive",
-            });
+            toast({ title: 'Erro no Cadastro', description: error.message, variant: 'destructive' });
           }
         } else {
-          toast({
-            title: "Cadastro realizado!",
-            description: "Conta criada com sucesso! Redirecionando...",
-          });
-          // Aguarda um pouco para o perfil ser criado e então redireciona
-          setTimeout(() => {
-            navigate('/');
-          }, 1500);
+          toast({ title: 'Cadastro realizado!', description: 'Conta criada com sucesso! Redirecionando...' });
+          setTimeout(() => navigate('/'), 1500);
         }
       }
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro inesperado. Tente novamente.",
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: 'Erro', description: 'Ocorreu um erro inesperado. Tente novamente.', variant: 'destructive' });
     }
 
     setLoading(false);
   };
+
+  const handleMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await signInWithMagicLink(email);
+      if (error) {
+        toast({ title: 'Erro', description: error.message || 'Não foi possível enviar o link.', variant: 'destructive' });
+      } else {
+        setMagicSent(true);
+      }
+    } catch {
+      toast({ title: 'Erro', description: 'Ocorreu um erro inesperado.', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
 
   // Exibe loading durante verificação de autenticação
   if (authLoading) {
@@ -115,9 +103,7 @@ const Auth = () => {
   }
 
   // Se já está autenticado, não renderiza nada (será redirecionado)
-  if (user) {
-    return null;
-  }
+  if (user) return null;
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0a0a0a] flex items-center justify-center p-6">
@@ -134,9 +120,7 @@ const Auth = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <div className="bg-gradient-to-r from-green-500 to-green-600 p-3 rounded-xl">
-              <DollarSign className="w-8 h-8 text-white" />
-            </div>
+            <img src="/logo.png" alt="Vaidoso FC" className="w-24 h-24 object-contain drop-shadow-2xl" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Vaidoso FC</h1>
           <p className="text-slate-300">Gestão financeira e artilharia do clube</p>
@@ -145,87 +129,149 @@ const Auth = () => {
         <Card className="bg-white/10 backdrop-blur-lg border-white/20">
           <CardHeader>
             <CardTitle className="text-2xl text-center text-white">
-              {isLogin ? 'Login' : 'Criar Conta'}
+              {isMagic ? 'Link por Email' : (isLogin ? 'Login' : 'Criar Conta')}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && (
-                <div>
-                  <Label htmlFor="fullName" className="text-white">Nome Completo</Label>
-                  <Input
-                    id="fullName"
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Digite seu nome completo"
-                    className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
-                    required={!isLogin}
-                  />
-                </div>
-              )}
-              
-              <div>
-                <Label htmlFor="email" className="text-white">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Digite seu email"
-                  className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
-                  required
-                />
-              </div>
+          <CardContent className="space-y-4">
 
-              <div>
-                <Label htmlFor="password" className="text-white">Senha</Label>
-                <div className="relative">
+
+
+            {/* ── Magic Link ── */}
+            {isMagic ? (
+              magicSent ? (
+                <div className="text-center space-y-3 py-4">
+                  <Mail className="w-10 h-10 text-green-400 mx-auto" />
+                  <p className="text-white font-semibold">Link enviado!</p>
+                  <p className="text-slate-300 text-sm">
+                    Verifique o email <strong className="text-green-400">{email}</strong> e clique no link para entrar.
+                  </p>
+                  <Button
+                    variant="ghost"
+                    onClick={() => { setMagicSent(false); setEmail(''); }}
+                    className="text-slate-400 hover:text-white hover:bg-white/10 text-sm"
+                  >
+                    Usar outro email
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleMagicLink} className="space-y-4">
+                  <div>
+                    <Label htmlFor="magic-email" className="text-white">Email</Label>
+                    <Input
+                      id="magic-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Digite seu email"
+                      className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
+                      required
+                    />
+                    <p className="text-slate-400 text-xs mt-1 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-green-400" />
+                      Enviaremos um link de acesso. Sem senha!
+                    </p>
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-xl"
+                  >
+                    {loading ? 'Enviando...' : 'Enviar Magic Link ✨'}
+                  </Button>
+                </form>
+              )
+            ) : (
+              /* ── Formulário Email + Senha ── */
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {!isLogin && (
+                  <div>
+                    <Label htmlFor="fullName" className="text-white">Nome Completo</Label>
+                    <Input
+                      id="fullName"
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Digite seu nome completo"
+                      className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
+                      required={!isLogin}
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <Label htmlFor="email" className="text-white">Email</Label>
                   <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Digite sua senha"
-                    className="bg-white/10 border-white/20 text-white placeholder:text-slate-400 pr-10"
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Digite seu email"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
                     required
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="password" className="text-white">Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Digite sua senha"
+                      className="bg-white/10 border-white/20 text-white placeholder:text-slate-400 pr-10"
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white hover:bg-white/10"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-xl"
+                >
+                  {loading ? 'Carregando...' : (isLogin ? 'Entrar' : 'Criar Conta')}
+                </Button>
+              </form>
+            )}
+
+            {/* ── Links de navegação ── */}
+            <div className="mt-4 text-center space-y-2">
+              {/* Alternar login/cadastro */}
+              {!isMagic && (
+                <div>
+                  <p className="text-slate-300">
+                    {isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?'}
+                  </p>
                   <Button
                     type="button"
                     variant="ghost"
-                    size="sm"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white hover:bg-white/10"
+                    onClick={() => { setIsLogin(!isLogin); setPassword(''); setFullName(''); }}
+                    className="text-green-400 hover:text-green-300 hover:bg-white/10 mt-1"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {isLogin ? 'Criar conta' : 'Fazer login'}
                   </Button>
                 </div>
-              </div>
+              )}
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-xl"
-              >
-                {loading ? 'Carregando...' : (isLogin ? 'Entrar' : 'Criar Conta')}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-slate-300">
-                {isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?'}
-              </p>
+              {/* Alternar entre email+senha e magic link */}
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setPassword('');
-                  setFullName('');
-                }}
-                className="text-green-400 hover:text-green-300 hover:bg-white/10 mt-2"
+                onClick={() => { setIsMagic(!isMagic); setMagicSent(false); setEmail(''); }}
+                className="text-slate-400 hover:text-green-300 hover:bg-white/10 text-sm"
               >
-                {isLogin ? 'Criar conta' : 'Fazer login'}
+                {isMagic ? '← Voltar para login com senha' : '✨ Entrar sem senha (Magic Link)'}
               </Button>
             </div>
           </CardContent>

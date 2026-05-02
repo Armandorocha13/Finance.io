@@ -5,113 +5,97 @@ import { TrendingUp, TrendingDown, Calendar, Trash2 } from 'lucide-react';
 import { Transaction } from '@/hooks/useTransactions';
 import { useToast } from '@/hooks/use-toast';
 
-// Props do componente TransactionList
 interface TransactionListProps {
-  transactions: Transaction[];  // Lista de transações a serem exibidas
-  onDelete: (id: string) => Promise<void>; // Função para excluir transação
-  isDeleting: boolean; // Estado de exclusão
+  transactions: Transaction[];
+  onDelete: (id: string) => Promise<void>;
+  isDeleting: boolean;
 }
 
-// Componente que exibe a lista de transações
 const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete, isDeleting }) => {
-  // Hooks para feedback
-  const { toast } = useToast();  // Sistema de notificações
+  const { toast } = useToast();
 
-  // Formata a data para o padrão brasileiro (dd/mm/yyyy)
-  // Evita problemas de timezone tratando a data como string YYYY-MM-DD
   const formatDate = (dateString: string) => {
-    // Se a data já está no formato YYYY-MM-DD, faz parse manual
     if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
       const [year, month, day] = dateString.split('-');
       return `${day}/${month}/${year}`;
     }
-    // Fallback para outros formatos
-    const date = new Date(dateString + 'T12:00:00'); // Usa meio-dia para evitar problemas de timezone
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    const date = new Date(dateString + 'T12:00:00');
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  // Handler para exclusão de transação com confirmação
   const handleDeleteTransaction = async (transactionId: string) => {
     if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
       try {
         await onDelete(transactionId);
-        toast({
-          title: "Transação excluída",
-          description: "A transação foi removida com sucesso.",
-        });
-      } catch (error) {
-        toast({
-          title: "Erro ao excluir",
-          description: "Não foi possível excluir a transação. Tente novamente.",
-          variant: "destructive",
-        });
+        toast({ title: 'Transação excluída', description: 'A transação foi removida com sucesso.' });
+      } catch {
+        toast({ title: 'Erro ao excluir', description: 'Não foi possível excluir a transação. Tente novamente.', variant: 'destructive' });
       }
     }
   };
 
   return (
-    <Card className="bg-white/10 backdrop-blur-lg border-white/20 text-white">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-slate-200 flex items-center">
+        <CardTitle className="text-foreground flex items-center">
           <Calendar className="w-5 h-5 mr-2" />
           Transações {transactions.length > 5 ? 'Todas' : 'Recentes'}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {/* Mensagem quando não há transações */}
+        <div className="space-y-3">
           {transactions.length === 0 ? (
-            <p className="text-slate-400 text-center py-8">
+            <p className="text-muted-foreground text-center py-8">
               Nenhuma transação encontrada
             </p>
           ) : (
-            // Lista de transações
             transactions.map((transaction) => (
               <div
                 key={transaction.id}
-                className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-200 group"
+                className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border hover:bg-muted transition-all duration-200 group"
               >
-                {/* Lado esquerdo: ícone, descrição e categoria */}
+                {/* Lado esquerdo */}
                 <div className="flex items-center space-x-3">
-                  {/* Ícone indicador do tipo de transação */}
-                  <div className={`p-2 rounded-full ${transaction.type === 'income'
-                    ? 'bg-green-400/20 text-green-400'
-                    : 'bg-red-400/20 text-red-400'
-                    }`}>
+                  <div
+                    className={`p-2 rounded-full ${
+                      transaction.type === 'income'
+                        ? 'bg-green-500/15 text-green-600 dark:text-green-400'
+                        : 'bg-red-500/15 text-red-600 dark:text-red-400'
+                    }`}
+                  >
                     {transaction.type === 'income' ? (
                       <TrendingUp className="w-4 h-4" />
                     ) : (
                       <TrendingDown className="w-4 h-4" />
                     )}
                   </div>
-                  {/* Informações da transação */}
                   <div>
-                    <p className="font-medium text-white">{transaction.description}</p>
-                    <p className="text-sm text-slate-400">
+                    <p className="font-medium text-foreground">{transaction.description}</p>
+                    <p className="text-sm text-muted-foreground">
                       {transaction.category} • {formatDate(transaction.date)}
                     </p>
                   </div>
                 </div>
-                {/* Lado direito: valor e botão de exclusão */}
+
+                {/* Lado direito */}
                 <div className="flex items-center gap-3">
-                  {/* Valor da transação */}
                   <div className="text-right">
-                    <p className={`font-semibold ${transaction.type === 'income' ? 'text-green-400' : 'text-red-400'
-                      }`}>
+                    <p
+                      className={`font-semibold ${
+                        transaction.type === 'income'
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-red-600 dark:text-red-400'
+                      }`}
+                    >
                       {transaction.type === 'income' ? '+' : '-'}R$ {transaction.amount.toLocaleString('pt-BR')}
                     </p>
                   </div>
-                  {/* Botão de exclusão (visível apenas no hover) */}
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDeleteTransaction(transaction.id)}
                     disabled={isDeleting}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-green-500 hover:text-green-400 hover:bg-green-500/10"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

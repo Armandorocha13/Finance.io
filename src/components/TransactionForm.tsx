@@ -138,13 +138,13 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, onCancel })
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-white">Nova Transação</h2>
+        <h2 className="text-2xl font-bold text-foreground">Nova Transação</h2>
         <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={onCancel}
-          className="text-white hover:bg-white/10"
+          className="text-muted-foreground hover:text-foreground"
         >
           <X className="w-5 h-5" />
         </Button>
@@ -152,19 +152,18 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, onCancel })
 
       <div className="space-y-4">
         <div>
-          <Label htmlFor="description" className="text-white">Descrição</Label>
+          <Label htmlFor="description">Descrição</Label>
           <Input
             id="description"
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="Ex: Compra no supermercado"
-            className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
             required
           />
         </div>
 
         <div>
-          <Label htmlFor="amount" className="text-white">Valor</Label>
+          <Label htmlFor="amount">Valor</Label>
           <Input
             id="amount"
             type="number"
@@ -172,47 +171,46 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, onCancel })
             value={formData.amount}
             onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
             placeholder="0,00"
-            className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
             required
           />
         </div>
 
         <div>
-          <Label htmlFor="type" className="text-white">Tipo</Label>
-          <Select 
-            value={formData.type} 
-            onValueChange={(value: 'income' | 'expense') => 
+          <Label htmlFor="type">Tipo</Label>
+          <Select
+            value={formData.type}
+            onValueChange={(value: 'income' | 'expense') =>
               setFormData({ ...formData, type: value, category: '' })
             }
           >
-            <SelectTrigger className="bg-white/10 border-white/20 text-white">
+            <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700">
-              <SelectItem value="income" className="text-green-400">Entrada</SelectItem>
-              <SelectItem value="expense" className="text-red-400">Saída</SelectItem>
+            <SelectContent>
+              <SelectItem value="income" className="text-green-700 dark:text-green-400">Entrada</SelectItem>
+              <SelectItem value="expense" className="text-red-700 dark:text-red-400">Saída</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <Label htmlFor="category" className="text-white">Categoria</Label>
-          <Select 
-            value={formData.category} 
+          <Label htmlFor="category">Categoria</Label>
+          <Select
+            value={formData.category}
             onValueChange={(value) => setFormData({ ...formData, category: value })}
           >
-            <SelectTrigger className="bg-white/10 border-white/20 text-white">
+            <SelectTrigger>
               <SelectValue placeholder="Selecione uma categoria" />
             </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700">
+            <SelectContent>
               {getCategoriesByType(formData.type).length > 0 ? (
                 getCategoriesByType(formData.type).map((category) => (
-                  <SelectItem key={category} value={category} className="text-white">
+                  <SelectItem key={category} value={category}>
                     {category}
                   </SelectItem>
                 ))
               ) : (
-                <div className="px-2 py-1.5 text-sm text-slate-500">
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">
                   Nenhuma categoria disponível
                 </div>
               )}
@@ -221,13 +219,12 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, onCancel })
         </div>
 
         <div>
-          <Label htmlFor="date" className="text-white">Data</Label>
+          <Label htmlFor="date">Data</Label>
           <Input
             id="date"
             type="date"
             value={formData.date}
             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-            className="bg-white/10 border-white/20 text-white"
             required
           />
         </div>
@@ -238,7 +235,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, onCancel })
           type="button"
           variant="outline"
           onClick={onCancel}
-          className="flex-1 bg-transparent border-white text-white hover:bg-white/10"
+          className="flex-1"
         >
           Cancelar
         </Button>

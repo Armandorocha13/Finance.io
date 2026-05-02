@@ -27,7 +27,7 @@ import TransactionForm from './TransactionForm';
 import TransactionList from './TransactionList';
 import CategoryManager from './CategoryManager';
 import ArtilhariaManager from './ArtilhariaManager';
-import AIReport from './AIReport';
+import ClubReport from './ClubReport';
 import { Header } from '@/components/ui/header-2';
 import { useArtilharia } from '@/hooks/useArtilharia';
 import { Trophy } from 'lucide-react';
@@ -261,7 +261,7 @@ const Dashboard = () => {
 
             {/* Cards de Resumo */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="bg-card/10 backdrop-blur-lg border-border">
+              <Card className="border-border">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-card-foreground/80">
                     Entradas
@@ -278,7 +278,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-card/10 backdrop-blur-lg border-border">
+              <Card className="border-border">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-card-foreground/80">
                     Saídas
@@ -295,7 +295,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-card/10 backdrop-blur-lg border-border">
+              <Card className="border-border">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-card-foreground/80">
                     Liquido
@@ -312,7 +312,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-card/10 backdrop-blur-lg border-border">
+              <Card className="border-border">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-card-foreground/80">
                     Acumulado em caixa
@@ -331,7 +331,7 @@ const Dashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:gap-6">
-              <Card className="bg-card/10 backdrop-blur-lg border-border">
+              <Card className="border-border">
                 <CardHeader>
                   <CardTitle className="text-lg sm:text-xl text-card-foreground">
                     Entradas vs Saídas
@@ -466,7 +466,7 @@ const Dashboard = () => {
             </div>
 
             {/* Lista de Artilharia no Dashboard */}
-            <Card className="bg-card/10 backdrop-blur-lg border-border">
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="text-lg sm:text-xl text-card-foreground flex items-center gap-2">
                   <Trophy className="w-5 h-5 text-yellow-500" />
@@ -566,13 +566,13 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="ai-report">
-            <AIReport timeframe="month" />
+            <ClubReport />
           </TabsContent>
         </Tabs>
 
         {showForm && (
-          <div className="fixed inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-card/10 backdrop-blur-lg border border-border rounded-2xl p-6 w-full max-w-md">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
               <TransactionForm
                 onSubmit={async (data) => {
                   try {

@@ -1,8 +1,8 @@
+/// <reference types="vitest" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
-// https://vitejs.dev/config/
 export default defineConfig({
   server: {
     host: "::",
@@ -19,6 +19,25 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: ["./src/__mocks__/setup.ts"],
+    exclude: ["node_modules", "e2e/**", "dist/**"],
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html"],
+      exclude: [
+        "node_modules/**",
+        "src/__mocks__/**",
+        "src/integrations/**",
+        "e2e/**",
+      ],
     },
   },
 });
