@@ -1,3 +1,15 @@
+/**
+ * TransactionForm.tsx
+ * 
+ * Componente de Formulário para Criação e Edição de Transações
+ * 
+ * Responsabilidades:
+ * - Capturar dados de entrada (valor, descrição, data, categoria)
+ * - Validar os dados antes da submissão
+ * - Enviar os dados formatados para o componente pai
+ * 
+ * @author Vaidoso FC
+ */
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

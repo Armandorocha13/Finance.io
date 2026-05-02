@@ -1,3 +1,15 @@
+/**
+ * CategoryManager.tsx
+ * 
+ * Componente Gerenciador de Categorias
+ * 
+ * Responsabilidades:
+ * - Listar, criar, editar e excluir categorias de receitas e despesas
+ * - Separar as categorias em abas organizadas
+ * - Interagir com o LocalStorage ou Supabase para persistência
+ * 
+ * @author Vaidoso FC
+ */
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
