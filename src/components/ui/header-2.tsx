@@ -123,7 +123,7 @@ export function Header({ activeTab, onTabChange }: HeaderProps) {
 				)}
 			>
 				<div className="flex items-center gap-2">
-					<img src="/logo.png" alt="Vaidoso FC" className="h-7 w-7 object-contain drop-shadow-md" />
+					<img src="/logo.png" alt="Vaidoso FC" className="h-7 w-7 object-contain drop-shadow-md invert mix-blend-multiply dark:invert-0 dark:mix-blend-screen" />
 					<span className="text-lg font-bold text-foreground">Vaidoso FC</span>
 				</div>
 				<div className="hidden items-center gap-2 md:flex">
