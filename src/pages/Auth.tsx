@@ -120,7 +120,7 @@ const Auth = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <img src="/logo.png" alt="Vaidoso FC" className="w-24 h-24 object-contain drop-shadow-2xl" />
+            <img src="/logo.png" alt="Vaidoso FC" className="w-36 h-36 object-contain drop-shadow-2xl mix-blend-plus-lighter" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Vaidoso FC</h1>
           <p className="text-slate-300">Gestão financeira e artilharia do clube</p>
