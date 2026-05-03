@@ -93,6 +93,7 @@ const ClubReport: React.FC = () => {
 
   const monthlyTxs = useMemo(() =>
     transactions.filter(t => {
+      if (selMonth === 0) return false;
       const [y, m] = t.date.split('-').map(Number);
       return y === selYear && m === selMonth;
     }),
@@ -215,29 +216,31 @@ const ClubReport: React.FC = () => {
       y = 36;
 
       // Período
-      txt(`Período: ${MONTH_NAMES[selMonth - 1]} / ${selYear}`, 14, true, mg, [20, 20, 20]);
+      txt(`Período: ${selMonth === 0 ? 'Consolidado Anual' : MONTH_NAMES[selMonth - 1]} / ${selYear}`, 14, true, mg, [20, 20, 20]);
       y += lh * 0.5;
 
-      // ── Resumo Mensal ──────────────────────────────────────────────────────
+      if (selMonth !== 0) {
+        // ── Resumo Mensal ──────────────────────────────────────────────────────
 
-      section(`RESUMO MENSAL — ${MONTH_NAMES[selMonth - 1].toUpperCase()} ${selYear}`);
-      row('Total de Entradas',  BRL(monthly.income));
-      row('Total de Saídas',    BRL(monthly.expense));
-      row('Saldo do Mês',       BRL(monthly.balance));
-      row('Nº de Transações',   String(monthlyTxs.length));
+        section(`RESUMO MENSAL — ${MONTH_NAMES[selMonth - 1].toUpperCase()} ${selYear}`);
+        row('Total de Entradas',  BRL(monthly.income));
+        row('Total de Saídas',    BRL(monthly.expense));
+        row('Saldo do Mês',       BRL(monthly.balance));
+        row('Nº de Transações',   String(monthlyTxs.length));
 
-      // ── Entradas por categoria ─────────────────────────────────────────────
+        // ── Entradas por categoria ─────────────────────────────────────────────
 
-      if (monthIncCats.length > 0) {
-        section('ENTRADAS POR CATEGORIA (MÊS)');
-        monthIncCats.forEach(([cat, val]) => row(cat, BRL(val), mg + 4));
-      }
+        if (monthIncCats.length > 0) {
+          section('ENTRADAS POR CATEGORIA (MÊS)');
+          monthIncCats.forEach(([cat, val]) => row(cat, BRL(val), mg + 4));
+        }
 
-      // ── Saídas por categoria ───────────────────────────────────────────────
+        // ── Saídas por categoria ───────────────────────────────────────────────
 
-      if (monthExpCats.length > 0) {
-        section('SAÍDAS POR CATEGORIA (MÊS)');
-        monthExpCats.forEach(([cat, val]) => row(cat, BRL(val), mg + 4));
+        if (monthExpCats.length > 0) {
+          section('SAÍDAS POR CATEGORIA (MÊS)');
+          monthExpCats.forEach(([cat, val]) => row(cat, BRL(val), mg + 4));
+        }
       }
 
       // ── Resumo Anual ───────────────────────────────────────────────────────
@@ -278,7 +281,7 @@ const ClubReport: React.FC = () => {
         );
       }
 
-      const fileName = `vaidoso-fc-relatorio-financeiro-${MONTH_NAMES[selMonth - 1].toLowerCase()}-${selYear}.pdf`;
+      const fileName = `vaidoso-fc-relatorio-financeiro-${selMonth === 0 ? 'anual' : MONTH_NAMES[selMonth - 1].toLowerCase()}-${selYear}.pdf`;
       pdf.save(fileName);
 
       toast({ title: 'PDF gerado!', description: `Arquivo "${fileName}" baixado com sucesso.` });
@@ -318,6 +321,7 @@ const ClubReport: React.FC = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="0">Todos</SelectItem>
                   {MONTH_NAMES.map((name, i) => (
                     <SelectItem key={i + 1} value={String(i + 1)}>{name}</SelectItem>
                   ))}
@@ -363,6 +367,7 @@ const ClubReport: React.FC = () => {
       </Card>
 
       {/* ── Resumo Mensal ──────────────────────────────────────────────────── */}
+      {selMonth !== 0 && (
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base text-foreground">
@@ -416,6 +421,7 @@ const ClubReport: React.FC = () => {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* ── Resumo Anual ──────────────────────────────────────────────────── */}
       <Card>
