@@ -79,3 +79,4 @@ export const mockSupabaseClient = {
 export const resetSupabaseMocks = () => {
   vi.clearAllMocks();
 };
+import { vi } from 'vitest';

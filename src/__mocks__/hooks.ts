@@ -96,3 +96,4 @@ vi.mock('jspdf', () => ({
     save: mockPdfSave,
   })),
 }));
+import { vi } from 'vitest';

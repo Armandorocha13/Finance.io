@@ -136,7 +136,7 @@ const ClubReport: React.FC = () => {
 
   // ── PDF ───────────────────────────────────────────────────────────────────────
 
-  const generatePDF = () => {
+  const generatePDF = (type: 'financeiro' | 'artilharia') => {
     setGenerating(true);
     try {
       const pdf   = new jsPDF();
@@ -218,64 +218,67 @@ const ClubReport: React.FC = () => {
       txt(`Período: ${MONTH_NAMES[selMonth - 1]} / ${selYear}`, 14, true, mg, [20, 20, 20]);
       y += lh * 0.5;
 
-      // ── Resumo Mensal ──────────────────────────────────────────────────────
+      if (type === 'financeiro') {
+        // ── Resumo Mensal ──────────────────────────────────────────────────────
 
-      section(`RESUMO MENSAL — ${MONTH_NAMES[selMonth - 1].toUpperCase()} ${selYear}`);
-      row('Total de Entradas',  BRL(monthly.income));
-      row('Total de Saídas',    BRL(monthly.expense));
-      row('Saldo do Mês',       BRL(monthly.balance));
-      row('Nº de Transações',   String(monthlyTxs.length));
+        section(`RESUMO MENSAL — ${MONTH_NAMES[selMonth - 1].toUpperCase()} ${selYear}`);
+        row('Total de Entradas',  BRL(monthly.income));
+        row('Total de Saídas',    BRL(monthly.expense));
+        row('Saldo do Mês',       BRL(monthly.balance));
+        row('Nº de Transações',   String(monthlyTxs.length));
 
-      // ── Entradas por categoria ─────────────────────────────────────────────
+        // ── Entradas por categoria ─────────────────────────────────────────────
 
-      if (monthIncCats.length > 0) {
-        section('ENTRADAS POR CATEGORIA (MÊS)');
-        monthIncCats.forEach(([cat, val]) => row(cat, BRL(val), mg + 4));
-      }
+        if (monthIncCats.length > 0) {
+          section('ENTRADAS POR CATEGORIA (MÊS)');
+          monthIncCats.forEach(([cat, val]) => row(cat, BRL(val), mg + 4));
+        }
 
-      // ── Saídas por categoria ───────────────────────────────────────────────
+        // ── Saídas por categoria ───────────────────────────────────────────────
 
-      if (monthExpCats.length > 0) {
-        section('SAÍDAS POR CATEGORIA (MÊS)');
-        monthExpCats.forEach(([cat, val]) => row(cat, BRL(val), mg + 4));
-      }
+        if (monthExpCats.length > 0) {
+          section('SAÍDAS POR CATEGORIA (MÊS)');
+          monthExpCats.forEach(([cat, val]) => row(cat, BRL(val), mg + 4));
+        }
 
-      // ── Resumo Anual ───────────────────────────────────────────────────────
+        // ── Resumo Anual ───────────────────────────────────────────────────────
 
-      section(`RESUMO ANUAL — ${selYear}`);
-      row('Total de Entradas no Ano',  BRL(annual.income));
-      row('Total de Saídas no Ano',    BRL(annual.expense));
-      row('Saldo Anual',               BRL(annual.balance));
-      row('Nº de Transações no Ano',   String(annualTxs.length));
+        section(`RESUMO ANUAL — ${selYear}`);
+        row('Total de Entradas no Ano',  BRL(annual.income));
+        row('Total de Saídas no Ano',    BRL(annual.expense));
+        row('Saldo Anual',               BRL(annual.balance));
+        row('Nº de Transações no Ano',   String(annualTxs.length));
 
-      // ── Evolução mensal ────────────────────────────────────────────────────
+        // ── Evolução mensal ────────────────────────────────────────────────────
 
-      section('EVOLUÇÃO MENSAL DO ANO');
-      const activeMths = monthlyBreakdown.filter(m => m.count > 0);
-      if (activeMths.length === 0) {
-        txt('Nenhuma transação no ano selecionado.', 10, false, mg, [120, 120, 120]);
+        section('EVOLUÇÃO MENSAL DO ANO');
+        const activeMths = monthlyBreakdown.filter(m => m.count > 0);
+        if (activeMths.length === 0) {
+          txt('Nenhuma transação no ano selecionado.', 10, false, mg, [120, 120, 120]);
+        } else {
+          activeMths.forEach(m => {
+            checkBreak(lh * 2);
+            txt(MONTH_NAMES[m.month - 1], 10, true, mg, [40, 40, 40]);
+            y -= lh * 0.3;
+            row(`  Entradas: ${BRL(m.income)}   Saídas: ${BRL(m.expense)}`, BRL(m.balance), mg + 4);
+          });
+        }
       } else {
-        activeMths.forEach(m => {
-          checkBreak(lh * 2);
-          txt(MONTH_NAMES[m.month - 1], 10, true, mg, [40, 40, 40]);
-          y -= lh * 0.3;
-          row(`  Entradas: ${BRL(m.income)}   Saídas: ${BRL(m.expense)}`, BRL(m.balance), mg + 4);
-        });
-      }
+        // ── Artilharia ─────────────────────────────────────────────────────────
 
-      // ── Artilharia ─────────────────────────────────────────────────────────
-
-      section('ARTILHARIA — TOP 5');
-      if (top5.length === 0) {
-        txt('Nenhum jogador cadastrado.', 10, false, mg, [120, 120, 120]);
-      } else {
-        top5.forEach((j, i) => {
-          checkBreak(lh * 1.8);
-          const pos    = i === 0 && j.gols > 0 ? '🥇' : `${i + 1}º`;
-          const label  = `${pos}  ${j.nome}${j.posicao ? ` (${j.posicao})` : ''}`;
-          const value  = `${j.gols} gol${j.gols !== 1 ? 's' : ''}`;
-          row(label, value, mg + 4);
-        });
+        section('ARTILHARIA — RANKING COMPLETO');
+        const todosArtilheiros = [...jogadores].sort((a, b) => b.gols - a.gols);
+        if (todosArtilheiros.length === 0) {
+          txt('Nenhum jogador cadastrado.', 10, false, mg, [120, 120, 120]);
+        } else {
+          todosArtilheiros.forEach((j, i) => {
+            checkBreak(lh * 1.8);
+            const pos    = i === 0 && j.gols > 0 ? '🥇' : `${i + 1}º`;
+            const label  = `${pos}  ${j.nome}${j.posicao ? ` (${j.posicao})` : ''}`;
+            const value  = `${j.gols} gol${j.gols !== 1 ? 's' : ''}`;
+            row(label, value, mg + 4);
+          });
+        }
       }
 
       // ── Rodapé ────────────────────────────────────────────────────────────
@@ -293,7 +296,7 @@ const ClubReport: React.FC = () => {
         );
       }
 
-      const fileName = `vaidoso-fc-relatorio-${MONTH_NAMES[selMonth - 1].toLowerCase()}-${selYear}.pdf`;
+      const fileName = `vaidoso-fc-relatorio-${type}-${MONTH_NAMES[selMonth - 1].toLowerCase()}-${selYear}.pdf`;
       pdf.save(fileName);
 
       toast({ title: 'PDF gerado!', description: `Arquivo "${fileName}" baixado com sucesso.` });
@@ -357,18 +360,35 @@ const ClubReport: React.FC = () => {
               </Select>
             </div>
 
-            {/* Botão PDF */}
-            <Button
-              onClick={generatePDF}
-              disabled={generating}
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white gap-2 ml-auto"
-            >
-              {generating ? (
-                <><RefreshCw className="w-4 h-4 animate-spin" /> Gerando...</>
-              ) : (
-                <><Download className="w-4 h-4" /> Baixar Relatório do Mês (PDF)</>
-              )}
-            </Button>
+            {/* Botões PDF */}
+            <div className="ml-auto flex items-center gap-2">
+              <Button
+                onClick={() => generatePDF('financeiro')}
+                disabled={generating}
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white gap-2"
+              >
+                {generating ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <DollarSign className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">Financeiro</span>
+                <span className="sm:hidden">PDF</span>
+              </Button>
+              <Button
+                onClick={() => generatePDF('artilharia')}
+                disabled={generating}
+                className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white gap-2"
+              >
+                {generating ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trophy className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">Artilharia</span>
+                <span className="sm:hidden">PDF</span>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

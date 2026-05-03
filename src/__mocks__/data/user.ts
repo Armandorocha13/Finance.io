@@ -49,3 +49,4 @@ export const mockAuthContextLoginError = {
     error: { message: 'Invalid login credentials' },
   }),
 };
+import { vi } from 'vitest';
