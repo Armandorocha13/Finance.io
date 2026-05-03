@@ -280,7 +280,7 @@ const ArtilhariaManager = () => {
       } else {
         todosArtilheiros.forEach((j, i) => {
           checkBreak(lh * 1.8);
-          const pos    = i === 0 && j.gols > 0 ? '🥇' : `${i + 1}º`;
+          const pos    = `${i + 1}º`;
           const label  = `${pos}  ${j.nome}${j.posicao ? ` (${j.posicao})` : ''}`;
           const value  = `${j.gols} gol${j.gols !== 1 ? 's' : ''}`;
           row(label, value, mg + 4);
