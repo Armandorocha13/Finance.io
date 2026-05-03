@@ -32,12 +32,12 @@ const BRL = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
 const MONTH_NAMES = [
-  'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro',
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 
 function calcTotals(txs: Transaction[]) {
-  const income  = txs.filter(t => t.type === 'income').reduce((s, t) => s + (t.amount || 0), 0);
+  const income = txs.filter(t => t.type === 'income').reduce((s, t) => s + (t.amount || 0), 0);
   const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + (t.amount || 0), 0);
   return { income, expense, balance: income - expense };
 }
@@ -77,7 +77,7 @@ const ClubReport: React.FC = () => {
   const { jogadores } = useArtilharia();
 
   const now = new Date();
-  const [selYear,  setSelYear]  = useState(now.getFullYear());
+  const [selYear, setSelYear] = useState(now.getFullYear());
   const [selMonth, setSelMonth] = useState(now.getMonth() + 1); // 1-based
   const [generating, setGenerating] = useState(false);
 
@@ -85,7 +85,7 @@ const ClubReport: React.FC = () => {
   // independente de existirem transações, para permitir registros retroativos
   const years = useMemo(() => {
     const start = 2020;
-    const end   = now.getFullYear();
+    const end = now.getFullYear();
     return Array.from({ length: end - start + 1 }, (_, i) => end - i); // decrescente
   }, []);
 
@@ -108,8 +108,7 @@ const ClubReport: React.FC = () => {
   // ── Cálculos ─────────────────────────────────────────────────────────────────
 
   const monthly = useMemo(() => calcTotals(monthlyTxs), [monthlyTxs]);
-  const annual  = useMemo(() => calcTotals(annualTxs),  [annualTxs]);
-  const general = useMemo(() => calcTotals(transactions), [transactions]);
+  const annual = useMemo(() => calcTotals(annualTxs), [annualTxs]);
 
   const monthExpCats = useMemo(() =>
     byCategory(monthlyTxs.filter(t => t.type === 'expense')),
@@ -141,12 +140,12 @@ const ClubReport: React.FC = () => {
   const generatePDF = () => {
     setGenerating(true);
     try {
-      const pdf   = new jsPDF();
-      const W     = pdf.internal.pageSize.getWidth();
-      const H     = pdf.internal.pageSize.getHeight();
-      const mg    = 18;
-      const lh    = 6.5;
-      let   y     = mg;
+      const pdf = new jsPDF();
+      const W = pdf.internal.pageSize.getWidth();
+      const H = pdf.internal.pageSize.getHeight();
+      const mg = 18;
+      const lh = 6.5;
+      let y = mg;
 
       const checkBreak = (need = lh * 2) => {
         if (y + need > H - mg) { pdf.addPage(); y = mg; }
@@ -224,10 +223,10 @@ const ClubReport: React.FC = () => {
         // ── Resumo Mensal ──────────────────────────────────────────────────────
 
         section(`RESUMO MENSAL — ${MONTH_NAMES[selMonth - 1].toUpperCase()} ${selYear}`);
-        row('Total de Entradas',  BRL(monthly.income));
-        row('Total de Saídas',    BRL(monthly.expense));
-        row('Saldo do Mês',       BRL(monthly.balance));
-        row('Nº de Transações',   String(monthlyTxs.length));
+        row('Total de Entradas', BRL(monthly.income));
+        row('Total de Saídas', BRL(monthly.expense));
+        row('Saldo do Mês', BRL(monthly.balance));
+        row('Nº de Transações', String(monthlyTxs.length));
 
         // ── Entradas por categoria ─────────────────────────────────────────────
 
@@ -247,18 +246,10 @@ const ClubReport: React.FC = () => {
       // ── Resumo Anual ───────────────────────────────────────────────────────
 
       section(`RESUMO ANUAL — ${selYear}`);
-      row('Total de Entradas no Ano',  BRL(annual.income));
-      row('Total de Saídas no Ano',    BRL(annual.expense));
-      row('Saldo Anual',               BRL(annual.balance));
-      row('Nº de Transações no Ano',   String(annualTxs.length));
-
-      // ── Resumo Geral ───────────────────────────────────────────────────────
-
-      section('RESUMO GERAL (TODO O PERÍODO)');
-      row('Total de Entradas Geral',   BRL(general.income));
-      row('Total de Saídas Geral',     BRL(general.expense));
-      row('Saldo Geral do Clube',      BRL(general.balance));
-      row('Nº Total de Transações',    String(transactions.length));
+      row('Total de Entradas no Ano', BRL(annual.income));
+      row('Total de Saídas no Ano', BRL(annual.expense));
+      row('Saldo Anual', BRL(annual.balance));
+      row('Nº de Transações no Ano', String(annualTxs.length));
 
       // ── Evolução mensal ────────────────────────────────────────────────────
 
@@ -377,59 +368,59 @@ const ClubReport: React.FC = () => {
 
       {/* ── Resumo Mensal ──────────────────────────────────────────────────── */}
       {selMonth !== 0 && (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base text-foreground">
-            Resumo Mensal — {MONTH_NAMES[selMonth - 1]} {selYear}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <StatCard label="Entradas" value={BRL(monthly.income)}
-              icon={TrendingUp}  color="bg-green-500/15 text-green-600 dark:text-green-400" />
-            <StatCard label="Saídas"   value={BRL(monthly.expense)}
-              icon={TrendingDown} color="bg-red-500/15 text-red-600 dark:text-red-400" />
-            <StatCard label="Saldo"    value={BRL(monthly.balance)}
-              icon={DollarSign}  color="bg-blue-500/15 text-blue-600 dark:text-blue-400" />
-          </div>
-
-          {/* Entradas por categoria */}
-          {monthIncCats.length > 0 && (
-            <div>
-              <SectionTitle>Entradas por categoria</SectionTitle>
-              <div className="space-y-1.5">
-                {monthIncCats.map(([cat, val]) => (
-                  <div key={cat} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{cat}</span>
-                    <span className="font-medium text-green-600 dark:text-green-400">{BRL(val)}</span>
-                  </div>
-                ))}
-              </div>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base text-foreground">
+              Resumo Mensal — {MONTH_NAMES[selMonth - 1]} {selYear}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <StatCard label="Entradas" value={BRL(monthly.income)}
+                icon={TrendingUp} color="bg-green-500/15 text-green-600 dark:text-green-400" />
+              <StatCard label="Saídas" value={BRL(monthly.expense)}
+                icon={TrendingDown} color="bg-red-500/15 text-red-600 dark:text-red-400" />
+              <StatCard label="Saldo" value={BRL(monthly.balance)}
+                icon={DollarSign} color="bg-blue-500/15 text-blue-600 dark:text-blue-400" />
             </div>
-          )}
 
-          {/* Saídas por categoria */}
-          {monthExpCats.length > 0 && (
-            <div>
-              <SectionTitle>Saídas por categoria</SectionTitle>
-              <div className="space-y-1.5">
-                {monthExpCats.map(([cat, val]) => (
-                  <div key={cat} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{cat}</span>
-                    <span className="font-medium text-red-600 dark:text-red-400">{BRL(val)}</span>
-                  </div>
-                ))}
+            {/* Entradas por categoria */}
+            {monthIncCats.length > 0 && (
+              <div>
+                <SectionTitle>Entradas por categoria</SectionTitle>
+                <div className="space-y-1.5">
+                  {monthIncCats.map(([cat, val]) => (
+                    <div key={cat} className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{cat}</span>
+                      <span className="font-medium text-green-600 dark:text-green-400">{BRL(val)}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {monthlyTxs.length === 0 && (
-            <p className="text-muted-foreground text-sm text-center py-4">
-              Nenhuma transação em {MONTH_NAMES[selMonth - 1]} {selYear}.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+            {/* Saídas por categoria */}
+            {monthExpCats.length > 0 && (
+              <div>
+                <SectionTitle>Saídas por categoria</SectionTitle>
+                <div className="space-y-1.5">
+                  {monthExpCats.map(([cat, val]) => (
+                    <div key={cat} className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{cat}</span>
+                      <span className="font-medium text-red-600 dark:text-red-400">{BRL(val)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {monthlyTxs.length === 0 && (
+              <p className="text-muted-foreground text-sm text-center py-4">
+                Nenhuma transação em {MONTH_NAMES[selMonth - 1]} {selYear}.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* ── Resumo Anual ──────────────────────────────────────────────────── */}
@@ -442,11 +433,11 @@ const ClubReport: React.FC = () => {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <StatCard label="Entradas no Ano" value={BRL(annual.income)}
-              icon={TrendingUp}  color="bg-green-500/15 text-green-600 dark:text-green-400" />
-            <StatCard label="Saídas no Ano"   value={BRL(annual.expense)}
+              icon={TrendingUp} color="bg-green-500/15 text-green-600 dark:text-green-400" />
+            <StatCard label="Saídas no Ano" value={BRL(annual.expense)}
               icon={TrendingDown} color="bg-red-500/15 text-red-600 dark:text-red-400" />
-            <StatCard label="Saldo Anual"      value={BRL(annual.balance)}
-              icon={DollarSign}  color="bg-purple-500/15 text-purple-600 dark:text-purple-400" />
+            <StatCard label="Saldo Anual" value={BRL(annual.balance)}
+              icon={DollarSign} color="bg-purple-500/15 text-purple-600 dark:text-purple-400" />
           </div>
 
           {/* Evolução mês a mês */}
@@ -496,25 +487,6 @@ const ClubReport: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* ── Resumo Geral ──────────────────────────────────────────────────── */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base text-foreground">
-            Resumo Geral (Todo o Período)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <StatCard label="Entradas (Total)" value={BRL(general.income)}
-              icon={TrendingUp}  color="bg-green-500/15 text-green-600 dark:text-green-400" />
-            <StatCard label="Saídas (Total)"   value={BRL(general.expense)}
-              icon={TrendingDown} color="bg-red-500/15 text-red-600 dark:text-red-400" />
-            <StatCard label="Saldo Geral"      value={BRL(general.balance)}
-              icon={DollarSign}  color="bg-purple-500/15 text-purple-600 dark:text-purple-400" />
-          </div>
-        </CardContent>
-      </Card>
-
       {/* ── Artilharia ────────────────────────────────────────────────────── */}
       <Card>
         <CardHeader className="pb-3">
@@ -533,17 +505,15 @@ const ClubReport: React.FC = () => {
               {top5.map((j, i) => (
                 <div
                   key={j.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg border ${
-                    i === 0 && j.gols > 0
+                  className={`flex items-center gap-3 p-3 rounded-lg border ${i === 0 && j.gols > 0
                       ? 'border-yellow-400/40 bg-yellow-500/5'
                       : 'border-border bg-muted/40'
-                  }`}
+                    }`}
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
-                    i === 0 && j.gols > 0
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${i === 0 && j.gols > 0
                       ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'
                       : 'bg-muted text-muted-foreground'
-                  }`}>
+                    }`}>
                     {i === 0 && j.gols > 0 ? <Trophy className="w-4 h-4" /> : i + 1}
                   </div>
                   <div className="flex-1 min-w-0">
