@@ -109,6 +109,7 @@ const ClubReport: React.FC = () => {
 
   const monthly = useMemo(() => calcTotals(monthlyTxs), [monthlyTxs]);
   const annual  = useMemo(() => calcTotals(annualTxs),  [annualTxs]);
+  const general = useMemo(() => calcTotals(transactions), [transactions]);
 
   const monthExpCats = useMemo(() =>
     byCategory(monthlyTxs.filter(t => t.type === 'expense')),
@@ -250,6 +251,14 @@ const ClubReport: React.FC = () => {
       row('Total de Saídas no Ano',    BRL(annual.expense));
       row('Saldo Anual',               BRL(annual.balance));
       row('Nº de Transações no Ano',   String(annualTxs.length));
+
+      // ── Resumo Geral ───────────────────────────────────────────────────────
+
+      section('RESUMO GERAL (TODO O PERÍODO)');
+      row('Total de Entradas Geral',   BRL(general.income));
+      row('Total de Saídas Geral',     BRL(general.expense));
+      row('Saldo Geral do Clube',      BRL(general.balance));
+      row('Nº Total de Transações',    String(transactions.length));
 
       // ── Evolução mensal ────────────────────────────────────────────────────
 
@@ -483,6 +492,25 @@ const ClubReport: React.FC = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Resumo Geral ──────────────────────────────────────────────────── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base text-foreground">
+            Resumo Geral (Todo o Período)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <StatCard label="Entradas (Total)" value={BRL(general.income)}
+              icon={TrendingUp}  color="bg-green-500/15 text-green-600 dark:text-green-400" />
+            <StatCard label="Saídas (Total)"   value={BRL(general.expense)}
+              icon={TrendingDown} color="bg-red-500/15 text-red-600 dark:text-red-400" />
+            <StatCard label="Saldo Geral"      value={BRL(general.balance)}
+              icon={DollarSign}  color="bg-purple-500/15 text-purple-600 dark:text-purple-400" />
           </div>
         </CardContent>
       </Card>
