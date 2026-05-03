@@ -278,10 +278,15 @@ const ArtilhariaManager = () => {
       if (todosArtilheiros.length === 0) {
         txt('Nenhum jogador cadastrado.', 10, false, mg, [120, 120, 120]);
       } else {
+        // Função para remover emojis e caracteres não-Latin-1 que quebram o jsPDF
+        const cleanText = (str: string) => str.replace(/[^\x00-\xFF]/g, "").trim();
+
         todosArtilheiros.forEach((j, i) => {
           checkBreak(lh * 1.8);
           const pos    = `${i + 1}º`;
-          const label  = `${pos}  ${j.nome}${j.posicao ? ` (${j.posicao})` : ''}`;
+          const nomeLimpo = cleanText(j.nome);
+          const posLimpa  = j.posicao ? cleanText(j.posicao) : '';
+          const label  = `${pos}  ${nomeLimpo}${posLimpa ? ` (${posLimpa})` : ''}`;
           const value  = `${j.gols} gol${j.gols !== 1 ? 's' : ''}`;
           row(label, value, mg + 4);
         });
