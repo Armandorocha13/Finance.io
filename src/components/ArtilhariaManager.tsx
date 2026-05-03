@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useArtilharia, Jogador } from '@/hooks/useArtilharia';
-import { Plus, Edit, Trash2, Minus, Trophy, Database } from 'lucide-react';
+import { Plus, Edit, Trash2, Minus, Trophy, Database, Download, RefreshCw } from 'lucide-react';
+import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,6 +35,7 @@ const ArtilhariaManager = () => {
   const [editingJogador, setEditingJogador] = useState<Jogador | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
     gols: 0,
@@ -189,6 +191,129 @@ const ArtilhariaManager = () => {
     }
   };
 
+  const generatePDF = () => {
+    setGenerating(true);
+    try {
+      const pdf   = new jsPDF();
+      const W     = pdf.internal.pageSize.getWidth();
+      const H     = pdf.internal.pageSize.getHeight();
+      const mg    = 18;
+      const lh    = 6.5;
+      let   y     = mg;
+      const now = new Date();
+
+      const checkBreak = (need = lh * 2) => {
+        if (y + need > H - mg) { pdf.addPage(); y = mg; }
+      };
+
+      const line = (x1: number, y1: number, x2: number, y2: number) => {
+        pdf.setDrawColor(210, 210, 210);
+        pdf.setLineWidth(0.3);
+        pdf.line(x1, y1, x2, y2);
+      };
+
+      const txt = (
+        text: string,
+        size: number,
+        bold = false,
+        x = mg,
+        color: [number, number, number] = [30, 30, 30]
+      ) => {
+        pdf.setFontSize(size);
+        pdf.setFont('helvetica', bold ? 'bold' : 'normal');
+        pdf.setTextColor(...color);
+        const lines = pdf.splitTextToSize(text, W - mg * 2);
+        checkBreak(lines.length * lh * 1.4);
+        lines.forEach((l: string) => { pdf.text(l, x, y); y += lh * 1.35; });
+      };
+
+      const row = (label: string, value: string, indent = mg) => {
+        checkBreak(lh * 1.8);
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(60, 60, 60);
+        pdf.text(label, indent, y);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(30, 30, 30);
+        const vw = pdf.getTextWidth(value);
+        pdf.text(value, W - mg - vw, y);
+        y += lh * 1.5;
+      };
+
+      const section = (title: string) => {
+        checkBreak(lh * 3);
+        y += lh * 0.5;
+        line(mg, y, W - mg, y);
+        y += lh * 0.8;
+        txt(title, 12, true, mg, [20, 20, 20]);
+        y += lh * 0.3;
+      };
+
+      // ── Cabeçalho ──────────────────────────────────────────────────────────
+
+      pdf.setFillColor(22, 163, 74);
+      pdf.rect(0, 0, W, 28, 'F');
+
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('VAIDOSO FC', mg, 12);
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Relatório de Artilharia do Clube', mg, 19);
+
+      const emissao = `Emitido em: ${now.toLocaleDateString('pt-BR')}`;
+      const emW = pdf.getTextWidth(emissao);
+      pdf.text(emissao, W - mg - emW, 19);
+
+      y = 36;
+
+      txt(`Período: Completo`, 14, true, mg, [20, 20, 20]);
+      y += lh * 0.5;
+
+      // ── Artilharia ─────────────────────────────────────────────────────────
+
+      section('ARTILHARIA — RANKING COMPLETO');
+      const todosArtilheiros = [...jogadores].sort((a, b) => b.gols - a.gols);
+      if (todosArtilheiros.length === 0) {
+        txt('Nenhum jogador cadastrado.', 10, false, mg, [120, 120, 120]);
+      } else {
+        todosArtilheiros.forEach((j, i) => {
+          checkBreak(lh * 1.8);
+          const pos    = i === 0 && j.gols > 0 ? '🥇' : `${i + 1}º`;
+          const label  = `${pos}  ${j.nome}${j.posicao ? ` (${j.posicao})` : ''}`;
+          const value  = `${j.gols} gol${j.gols !== 1 ? 's' : ''}`;
+          row(label, value, mg + 4);
+        });
+      }
+
+      // ── Rodapé ────────────────────────────────────────────────────────────
+
+      const totalPages = (pdf as any).internal.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        pdf.setPage(p);
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(150, 150, 150);
+        pdf.text(
+          `Vaidoso FC — Relatório gerado em ${now.toLocaleString('pt-BR')} — Página ${p}/${totalPages}`,
+          mg,
+          H - 8
+        );
+      }
+
+      const fileName = `vaidoso-fc-relatorio-artilharia-${now.getTime()}.pdf`;
+      pdf.save(fileName);
+
+      toast({ title: 'PDF gerado!', description: `Arquivo "${fileName}" baixado com sucesso.` });
+    } catch (err) {
+      console.error(err);
+      toast({ title: 'Erro ao gerar PDF', description: 'Não foi possível criar o arquivo.', variant: 'destructive' });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -197,6 +322,18 @@ const ArtilhariaManager = () => {
           <p className="text-muted-foreground">Gerencie os jogadores e seus gols</p>
         </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <Button
+            onClick={generatePDF}
+            disabled={generating}
+            className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white flex-1 sm:flex-none"
+          >
+            {generating ? (
+              <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            <span className="truncate">Exportar PDF</span>
+          </Button>
           <Button
             onClick={handleSyncSupabase}
             disabled={isImporting || !user}
